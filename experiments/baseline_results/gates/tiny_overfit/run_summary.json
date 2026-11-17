@@ -1,0 +1,32 @@
+{
+  "model": "baseline",
+  "seed": 403,
+  "learning_rate": 0.005,
+  "dropout": 0.0,
+  "augmentation": false,
+  "best_epoch": 151,
+  "epochs_ran": 151,
+  "val_cer": 0.0,
+  "val_exact_match": 1.0,
+  "train_seconds": 7.90228969999589,
+  "inference_ms_per_image": 2.347474990529008,
+  "parameter_count": 94091,
+  "model_weights_mb": 0.3589286804199219,
+  "checkpoint_size_mb": 0.3626432418823242,
+  "checkpoint_path": "D:\\AI403\\checkpoints\\baseline_results\\gates\\tiny_overfit\\best.pt",
+  "gpu_peak_allocated_mb": null,
+  "cpu_process_observed_peak_rss_mb": 357.2734375,
+  "hardware": {
+    "device": "cpu",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.14.7",
+    "torch": "2.15.0+cpu",
+    "numpy": "2.5.3",
+    "gpu": null
+  },
+  "split_sha256": {
+    "train_csv_sha256": "ac5aa0c9a415dae89f93923def4161cbe9f0e9e4a498f52dbebb50881b2af90e",
+    "val_csv_sha256": "8785814fb5af15a52b781975dfe59f8d249f18c22df580dc8e195790609f753a"
+  },
+  "test_was_used": false
+}

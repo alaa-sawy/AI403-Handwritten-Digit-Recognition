@@ -1,0 +1,5 @@
+filename,source,label,prediction,length,edit_distance,exact_match
+a_car_000155.png,CAR-A,60,60,2,0,1
+a_car_000176.png,CAR-A,15,15,2,0,1
+a_car_000828.png,CAR-A,25,25,2,0,1
+a_car_001182.png,CAR-A,60,60,2,0,1

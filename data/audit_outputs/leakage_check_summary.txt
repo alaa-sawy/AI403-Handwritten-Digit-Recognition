@@ -1,0 +1,11 @@
+M1 PART 2.4 - EXACT HASH / LEAKAGE AUDIT
+Official TRAIN images: 5009
+Official TEST images hashed only (no labels opened): 6710
+Exact duplicate groups inside TRAIN: 1
+Exact TRAIN duplicates with inconsistent labels: 0
+Exact duplicate image matches across TRAIN and TEST: 0
+WRITER DISJOINTNESS: UNKNOWN (no verified writer_id metadata supplied)
+PERCEPTUAL NEAR-DUPLICATES: NOT CHECKED (different bytes may look alike)
+ACTION: Keep all identical TRAIN images in the same train/val group; or remove one copy.
+ACTION: Keep official TEST sealed for training and hyperparameter selection.
+PASS: no conflicting TRAIN labels or exact TRAIN/TEST duplicates.

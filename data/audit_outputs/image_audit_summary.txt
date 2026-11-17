@@ -1,0 +1,12 @@
+ORAND-CAR: TRAIN IMAGE AUDIT
+Train images: 5009
+CAR-A images: 2009
+CAR-B images: 3000
+Images with unreadable content: 0
+Images missing labels: 0
+Unique TRAIN labels (A+B combined): 3141
+Label length distribution: {2: 22, 3: 204, 4: 767, 5: 2103, 6: 1744, 7: 166, 8: 3}
+Exact duplicate image groups: 1
+Identical image groups with conflicting labels: 0
+Official TEST data and labels were not opened.
+Results CSV: D:\AI403\experiments\data_audit_images.csv

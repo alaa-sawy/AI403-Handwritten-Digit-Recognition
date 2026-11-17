@@ -1,0 +1,34 @@
+
+# Python environments and cache
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local environment secrets
+.env
+
+# Original dataset
+/data/raw/
+
+# Extracted dataset images
+/data/processed/images/
+
+# Large dataset archives
+*.tar.gz
+*.rar
+
+# Model weights and checkpoints
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Dataset audit sample images
+/data/audit_outputs/**/*.png
+/data/audit_outputs/**/*.jpg
+/data/audit_outputs/**/*.jpeg
+
+/data/audit_outputs/code_backups/
+/data/audit_outputs/*.npy

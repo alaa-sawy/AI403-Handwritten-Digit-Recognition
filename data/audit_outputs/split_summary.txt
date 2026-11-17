@@ -1,0 +1,17 @@
+M1 — FROZEN DATASET SPLITS
+Seed: 403
+Official TRAIN total: 5009
+Removed exact duplicate from usable manifest: CAR-B / b_car_004864.png
+Usable unique images: 5008
+Train: 4507
+Validation: 501
+Official TEST file names only (sealed labels): 6710
+Train by CAR source: {'CAR-A': 1808, 'CAR-B': 2699}
+Validation by CAR source: {'CAR-A': 201, 'CAR-B': 300}
+Train lengths by source/length: {('CAR-A', 2): 20, ('CAR-A', 3): 184, ('CAR-A', 4): 633, ('CAR-A', 5): 813, ('CAR-A', 6): 130, ('CAR-A', 7): 26, ('CAR-A', 8): 2, ('CAR-B', 4): 57, ('CAR-B', 5): 1080, ('CAR-B', 6): 1438, ('CAR-B', 7): 123, ('CAR-B', 8): 1}
+Validation lengths by source/length: {('CAR-A', 2): 2, ('CAR-A', 3): 20, ('CAR-A', 4): 71, ('CAR-A', 5): 90, ('CAR-A', 6): 15, ('CAR-A', 7): 3, ('CAR-B', 4): 6, ('CAR-B', 5): 120, ('CAR-B', 6): 160, ('CAR-B', 7): 14}
+No exact image SHA256 occurs in both train and validation: TRUE
+WRITER DISJOINTNESS: UNKNOWN — writer IDs not available
+PERCEPTUAL NEAR DUPLICATES: NOT CHECKED
+Original .tar.gz: UNCHANGED
+Official test labels: NOT READ / NOT USED FOR SPLIT
