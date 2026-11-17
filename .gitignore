@@ -32,3 +32,4 @@ __pycache__/
 
 /data/audit_outputs/code_backups/
 /data/audit_outputs/*.npy
+/experiments/baseline_results/gates/
