@@ -1,0 +1,16 @@
+{
+  "group": "baseline",
+  "seeds": [
+    7,
+    21,
+    42
+  ],
+  "val_cer_mean": 0.783609931815258,
+  "val_cer_sd": 0.00117910091212039,
+  "val_exact_match_mean": 0.0,
+  "val_exact_match_sd": 0.0,
+  "train_seconds_mean": 1624.8575206332996,
+  "train_seconds_sd": 850.085036746874,
+  "inference_ms_per_image_mean": 0.693667797834618,
+  "inference_ms_per_image_sd": 0.47739814910999434
+}
