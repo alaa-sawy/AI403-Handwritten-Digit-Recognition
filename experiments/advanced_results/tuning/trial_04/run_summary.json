@@ -1,0 +1,32 @@
+{
+  "model": "advanced",
+  "seed": 403,
+  "learning_rate": 0.0003,
+  "dropout": 0.3,
+  "augmentation": true,
+  "best_epoch": 59,
+  "epochs_ran": 79,
+  "val_cer": 0.02277113083751447,
+  "val_exact_match": 0.8902195608782435,
+  "train_seconds": 2356.3099930000026,
+  "inference_ms_per_image": 3.025011776447421,
+  "parameter_count": 1245867,
+  "model_weights_mb": 4.752605438232422,
+  "checkpoint_size_mb": 4.774714469909668,
+  "checkpoint_path": "D:\\AI_Projects\\AI403-Handwritten-Digit-Recognition\\checkpoints\\advanced_results\\tuning\\trial_04\\best.pt",
+  "gpu_peak_allocated_mb": 1465.923828125,
+  "cpu_process_observed_peak_rss_mb": 594.48046875,
+  "hardware": {
+    "device": "cuda",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.13.6",
+    "torch": "2.15.0+cu132",
+    "numpy": "2.5.5",
+    "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU"
+  },
+  "split_sha256": {
+    "train_csv_sha256": "ac5aa0c9a415dae89f93923def4161cbe9f0e9e4a498f52dbebb50881b2af90e",
+    "val_csv_sha256": "8785814fb5af15a52b781975dfe59f8d249f18c22df580dc8e195790609f753a"
+  },
+  "test_was_used": false
+}
