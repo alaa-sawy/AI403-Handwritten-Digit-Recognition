@@ -33,3 +33,16 @@ __pycache__/
 /data/audit_outputs/code_backups/
 /data/audit_outputs/*.npy
 /experiments/baseline_results/gates/
+
+# Local caches
+.cache/
+
+# Official test data - never commit
+/data/final_test_images/
+/data/splits/test.csv
+
+# Model checkpoints
+/checkpoints/
+
+# Dataset archives
+*.tar
