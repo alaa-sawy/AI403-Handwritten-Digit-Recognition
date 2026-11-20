@@ -1,5 +1,6 @@
-# AI403 - Handwritten Digit-String Recognition
+# NeuroMotion - Handwritten Digit-String Recognition
 
+**Team:** NeuroMotion  
 **Pharos University in Alexandria | Faculty of Computer Science & Artificial Intelligence | Deep Learning (AI403), Fall 2026**  
 **Instructor:** Dr. Sahar Ghanem  
 **Selected course idea:** #12 - Handwritten Text Recognition, specialized to handwritten **digit strings** from bank-cheque courtesy-amount fields.
@@ -33,7 +34,7 @@ This README follows the **nine required README items in section 4.2** of the AI4
 | Salama Ahmed Salama Hassan Ahmed | 202302079 | **M4:** Advanced MultiScale CNN-BiGRU-attention and ablation |
 | Kerolos Elromany Naeem Ragheb Mashriqi | 202302674 | **M5:** shared comparison, integration, visualization, Streamlit demo |
 
-**Official team name:** to be confirmed by the team before using the submission filename `DL_Project_TeamName.zip`. The project title above is not a substitute for a registered team name.
+**Official team name:** **NeuroMotion**. The course hand-in filenames use this confirmed team name.
 
 **Input:** an image of a cropped handwritten numeric amount on a cheque.  
 **Output:** the complete digit **string** (e.g., `00520`); leading zeros, repeated digits and their order are significant.
@@ -303,16 +304,16 @@ The course brief requires **12 deliverables**: documented source code, dataset d
 | Final report PDF and slides in `report/` | Not tracked in current repository |
 | Large final checkpoint archive | Drive link provided; **contents not independently inventoried here** |
 | Contribution logs / peer reviews | M1 PDF copies and M2-M5 review templates present; signed, personally confirmed final PDFs pending |
-| Formal team name | Pending |
+| Formal team name | **NeuroMotion (confirmed by the team)** |
 | Repository TA collaborator access | Must be confirmed by team outside this repository audit |
 
 **Official submission, per course brief (`20 November 2026` deadline):**
 
-- One member emails the supervising TA a ZIP named `DL_Project_TeamName.zip`.
-- ZIP should contain `TeamName_Report.pdf`, `TeamName_Slides.pdf` (or PPTX), and a text file with the GitHub URL. Include the signed contribution/peer records using the TA's required mechanism.
+- One member emails the supervising TA a ZIP named `DL_Project_NeuroMotion.zip`.
+- ZIP should contain `NeuroMotion_Report.pdf`, `NeuroMotion_Slides.pdf` (or PPTX), and a text file with the GitHub URL. Include the signed contribution/peer records using the TA's required mechanism.
 - Add the TA as a GitHub collaborator before the deadline. Put original datasets and large model checkpoints in shared Drive and link it here.
 - Slides: **15 minutes** total across all five members; live demo: **5 minutes**. Every member should be ready for an individual viva and be able to explain the full system.
-- Individual PDF naming: `TeamName_StudentID_Log.pdf`; each log must have **Week, Task, Hours, Evidence, Problems** and a teammate co-signature.
+- Individual PDF naming: `NeuroMotion_StudentID_Log.pdf`; each log must have **Week, Task, Hours, Evidence, Problems** and a teammate co-signature.
 
 **Contribution source material:** [M1 contribution PDF](contributions/AI403_Alaa_202304181_Contribution_Log.pdf) and [M1 peer-evaluation PDF](contributions/AI403_Alaa_202304181_Peer_Evaluation.pdf) are available as supplied review documents; M2-M5 draft logs and peer templates remain under [`contributions/`](contributions/). Git/experiment evidence supports technical tasks but does not replace personal hour confirmation, peer evaluations or signatures.
 
