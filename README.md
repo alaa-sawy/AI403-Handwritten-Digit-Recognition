@@ -1,4 +1,4 @@
-# AI403 - Handwritten Digit-String Recognition
+﻿# AI403 - Handwritten Digit-String Recognition
 
 **Deep Learning Final Project | Pharos University in Alexandria | Fall 2026**
 
@@ -331,3 +331,4 @@ The source documentation records the dataset as **CC BY-NC-ND 4.0**; comply with
 ---
 
 *All numeric performance claims in this README are derived from committed validation CSV/JSON records. Only verified final TEST results may subsequently be labelled official TEST.*
+
