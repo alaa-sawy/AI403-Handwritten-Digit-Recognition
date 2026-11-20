@@ -313,4 +313,3 @@ The course brief requires **12 deliverables**: documented source code, dataset d
 
 ---
 
-**Reporting rule:** Validation results must never be relabelled as Official TEST. Do not invent missing scores, GPU metrics, experiment dates, signed logs or working-demo evidence. Work on training and final TEST is separate; freeze model selection before evaluating TEST.
