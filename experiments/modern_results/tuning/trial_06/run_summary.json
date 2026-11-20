@@ -1,0 +1,32 @@
+{
+  "model": "modern",
+  "seed": 403,
+  "learning_rate": 0.0001,
+  "dropout": 0.3,
+  "augmentation": true,
+  "best_epoch": 93,
+  "epochs_ran": 113,
+  "val_cer": 0.0567348514087225,
+  "val_exact_match": 0.7604790419161677,
+  "train_seconds": 4933.995118599996,
+  "inference_ms_per_image": 0.32501596805361654,
+  "parameter_count": 1183179,
+  "model_weights_mb": 4.513469696044922,
+  "checkpoint_size_mb": 5.506749153137207,
+  "checkpoint_path": "D:\\AI403\\checkpoints\\modern_results\\tuning\\trial_06\\best.pt",
+  "gpu_peak_allocated_mb": 431.98388671875,
+  "cpu_process_observed_peak_rss_mb": 1966.76171875,
+  "hardware": {
+    "device": "cuda",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "python": "3.14.7",
+    "torch": "2.15.0+cu132",
+    "numpy": "2.5.3",
+    "gpu": "NVIDIA RTX A1000 Laptop GPU"
+  },
+  "split_sha256": {
+    "train_csv_sha256": "ac5aa0c9a415dae89f93923def4161cbe9f0e9e4a498f52dbebb50881b2af90e",
+    "val_csv_sha256": "8785814fb5af15a52b781975dfe59f8d249f18c22df580dc8e195790609f753a"
+  },
+  "test_was_used": false
+}

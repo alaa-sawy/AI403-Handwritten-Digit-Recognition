@@ -1,0 +1,16 @@
+{
+  "group": "modern",
+  "seeds": [
+    7,
+    21,
+    42
+  ],
+  "val_cer_mean": 0.04052489386337322,
+  "val_cer_sd": 0.002410265533924508,
+  "val_exact_match_mean": 0.833666001330672,
+  "val_exact_match_sd": 0.011695539475214196,
+  "train_seconds_mean": 2789.2645413666664,
+  "train_seconds_sd": 2301.260400475285,
+  "inference_ms_per_image_mean": 0.36529434466830885,
+  "inference_ms_per_image_sd": 0.06374929828000532
+}
