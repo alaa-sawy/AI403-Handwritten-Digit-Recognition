@@ -3,7 +3,7 @@
 **Project:** AI403 — Handwritten Digit-String Recognition  
 **Dataset component owner:** M1  
 **Dataset release:** ORAND-CAR-2014, released for the ICFHR 2014 Handwritten Digit String Recognition competition  
-**Status:** Development split frozen; official test labels sealed
+**Status:** Frozen train/validation split; Official TEST is for frozen-model final evaluation only. Archived M4 test aggregates have been documented; the other families' test summaries are not yet consolidated on GitHub.
 
 ## 1. Dataset identity, source, and license
 
@@ -94,7 +94,7 @@ Each training run records its config and a split fingerprint. Final model traini
 
 The collection is drawn from real cheque CAR regions, so it is more realistic than clean synthetic digits but is **not representative of all handwriting**. Results may vary with background noise, image quality, source bank, handwriting style, string length, and digit frequency. The observed reference-digit distribution is not balanced. The project reports corpus character error rate (**CER**), exact-string match, per-digit sequence-aligned metrics and error types. These project metrics should **not be presented as identical to the original ICFHR competition's ANLD metric**.
 
-For the project-wide comparison, validation is used for selection, while the original official TEST partition is opened only once, after the full experiment protocol, final choices, and checkpoints have been frozen.
+For the project-wide comparison, validation is used for tuning and model selection. The original official TEST partition is evaluated only against frozen final checkpoints; it is never used to tune or select models. Archived M4 Official TEST aggregates are documented in `docs/M4_Official_Test_Evidence.md`; keep M1-M3 Official TEST results separate until their evaluations are complete and audited.
 
 ---
 
