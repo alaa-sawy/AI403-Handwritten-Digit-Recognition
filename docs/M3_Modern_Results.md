@@ -2,7 +2,7 @@
 
 **Project:** AI403 — Handwritten Digit-String Recognition\
 **Dataset:** ORAND-CAR-2014 (CAR-A and CAR-B)\
-**Status:** Model-specific training and validation complete; official test evaluation is intentionally deferred until the whole team's model choices are frozen.\
+**Status:** Modern ON and OFF validation completed and committed; these historical results are validation only. Official TEST for both conditions is processed separately and is not yet represented by an audited repository-wide M3 TEST summary.\
 **Evidence:** `src/models/modern.py`, `src/modern_gate.py`, `tests/test_modern.py`, `configs/modern.json`, and `experiments/modern_results/`.
 
 ## 1. Scope and hypothesis
@@ -135,14 +135,10 @@ python -m src.experiments_runner --model modern --stage final
 
 **Do not rerun completed training unnecessarily.** The main experiment runner reuses completed runs under its recorded-configuration and split-fingerprint checks.
 
-## 8. Outstanding team-level work
+## 8. Integration and hand-off
 
-M3 model-specific validation is complete. Before the whole project is submitted:
+The Modern source, six tuning trials, three final ON seeds, and three matched augmentation OFF runs are committed to the team repository. The official TEST is used only after checkpoint selection has been frozen, and its outputs must be documented separately from all validation numbers above.
 
-1. Integrate the M3 model and results into the team's repository and update its README's implementation/status section and citations.
-2. Include architecture, hyperparameter, main-results, computational-cost and error-analysis material in the **team report**; give attribution to the external PyTorch components.
-3. Produce the final cross-model comparison, including classic, baseline and advanced results, with matched seeds and validation protocol.
-4. Run the **official test once after all model-selection decisions are frozen**, and report those results separately from the validation metrics above.
-5. Provide the required combined demo, presentation and contribution documentation at the team level.
+For the project-wide demo, the shared inference adapter and checkpoint paths must be verified and the interface launched with a saved trained checkpoint. No repeated training is required merely to integrate these stored results.
 
-*The source of record for all numerical results above is the saved M3 CSV/JSON artifacts and the corresponding local-checkpoint verification output; no official test-set results are claimed.*
+*All numeric model-performance figures in this document are derived from saved M3 validation records, not Official TEST metrics.*
