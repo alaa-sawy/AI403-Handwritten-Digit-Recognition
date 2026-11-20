@@ -1,525 +1,333 @@
-# AI403 | Handwritten Digit-String Recognition
+# AI403 - Handwritten Digit-String Recognition
 
-**Deep Learning Final Project | Fall 2026 | Pharos University in Alexandria**
+**Deep Learning Final Project | Pharos University in Alexandria | Fall 2026**
 
-**Task:** Recognize an entire variable-length sequence of handwritten digits from a single image of the *courtesy amount recognition* (CAR) field of a bank cheque.
+**Git repository:** [AI403-Handwritten-Digit-Recognition](https://github.com/alaa-sawy/AI403-Handwritten-Digit-Recognition)  
+**Team checkpoint Drive (shared by the project owner):** [Google Drive folder](https://drive.google.com/drive/folders/1y6Tq6SnGyZ_oa1Vexl4Ovsx27PQArUZL?usp=sharing)
 
-**Approach:** One shared dataset, training protocol, CTC decoder, and evaluation pipeline for a CNN baseline and three deep-learning architecture families (Classic, Modern, Advanced).
+> **Project status — 20 November 2026:** All five primary model versions have recorded six-trial tuning and three-seed **validation** results. A three-seed Modern augmentation ON/OFF study and Advanced no-multiscale ablation are complete. **This is not yet the full course submission:** a reconciled official TEST comparison, integrated demo, final team report/slides and all individual contribution logs are not verified in `main`. No new training is required merely to read the saved results.
 
-> **Project status (20 November 2026):** The shared dataset/training/evaluation pipeline and multiple model families are being integrated by the team. The M4 Advanced model code includes a custom multi-scale CNN block, BiGRU, custom multi-head self-attention, and CTC classifier. The registry supports `advanced`, `advanced_no_multiscale`, and `advanced_no_attention`. Six final Advanced/No-Multiscale checkpoints have passed strict state-dictionary loading and forward-pass checks. A padding audit found that logits and validation metrics can vary with batch composition/size; evaluation batch size must therefore be fixed and reported. The No-Attention variant is implemented in code, but matched three-seed training and evaluation are still pending. See the M4 notes below; do not treat implementation-only ablations as measured findings.
+## Navigation
 
-## Quick navigation
+1. [Task and hypotheses](#1-task-and-hypotheses)
+2. [Dataset and preprocessing](#2-dataset-and-preprocessing)
+3. [Model implementations](#3-model-implementations)
+4. [Final validation comparison](#4-final-validation-comparison)
+5. [Training and tuning protocol](#5-training-and-tuning-protocol)
+6. [Controlled studies: pretraining, augmentation, ablation](#6-controlled-studies-pretraining-augmentation-ablation)
+7. [Error analysis and computational cost](#7-error-analysis-and-computational-cost)
+8. [Setup and evaluation commands](#8-setup-and-evaluation-commands)
+9. [Official TEST governance](#9-official-test-governance)
+10. [Checkpoint storage and reproducibility](#10-checkpoint-storage-and-reproducibility)
+11. [Repository contents and tests](#11-repository-contents-and-tests)
+12. [Deliverables still to finalize](#12-deliverables-still-to-finalize)
+13. [Team responsibilities and references](#13-team-responsibilities-and-references)
 
-- [1. Project goals and hypotheses](#1-project-goals-and-hypotheses)
-- [2. Dataset and splits](#2-dataset-and-splits)
-- [3. Installation and GPU support](#3-installation-and-gpu-support)
-- [4. Quick start: run the baseline](#4-quick-start-run-the-baseline)
-- [5. Model interface and architecture plan](#5-model-interface-and-architecture-plan)
-- [6. Experiments and fair comparison](#6-experiments-and-fair-comparison)
-- [7. Metrics, artifacts, and checkpoints](#7-metrics-artifacts-and-checkpoints)
-- [8. Final test protocol](#8-final-test-protocol)
-- [9. Repository structure](#9-repository-structure)
-- [10. Team workflow](#10-team-workflow)
-- [11. Troubleshooting](#11-troubleshooting)
-- [12. Credits, citation, and licensing](#12-credits-citation-and-licensing)
+## 1. Task and hypotheses
 
-## 1. Project goals and hypotheses
+**Input:** one image of a handwritten numeric string in the courtesy-amount-recognition (CAR) region of a bank cheque. **Output:** the complete ordered digit string, not an integer or a single digit. Leading zeros and repeated digits must be preserved (e.g. `00520`).
 
-**Input:** One cropped image containing a handwritten numeric amount, potentially including background noise or printed cheque marks.
+All primary models implement end-to-end sequence transcription with **Connectionist Temporal Classification (CTC)** rather than explicitly segmenting each character. CTC blank is ID `0` and digits `0`–`9` use class IDs `1`–`10`.
 
-**Output:** One string containing digits `0` to `9`, such as `2250`. The output length is **not fixed**; numbers are treated as strings, never integers.
-
-**Why CTC?** Connectionist Temporal Classification (CTC) supports alignment-free sequence recognition: we have a string label for each image but do not have a bounding box for every digit.
-
-### Planned, testable hypotheses
-
-| ID | Hypothesis | Comparison |
+| ID | Research hypothesis | Evidence from current validation |
 | --- | --- | --- |
-| H1 | Adding recurrent sequence modeling improves recognition over the CNN-only baseline. | Classic CNN/ResNet + BiGRU vs. Baseline CNN |
-| H2 | A Transformer encoder changes recognition performance compared with a recurrent classic encoder. | Modern CNN+Transformer vs. Classic |
-| H3 | Multiscale feature fusion improves recognition over the otherwise matched advanced model without it. | Advanced full vs. Advanced without multiscale |
-| H4 | Training-only augmentation improves generalization to unseen images. | Classic Pretrained augmentation ON vs. OFF |
+| H1 | Contextual sequence modeling improves over a small CNN baseline. | Both Classic models greatly outperform the Baseline. Other architecture components also change, so this is not proof of recurrence as the sole cause. |
+| H2 | A Transformer is a useful alternative to recurrent sequence modeling. | Modern works, but has worse validation CER than Classic; it has lower measured model-forward latency on the recorded (not identical) hardware. |
+| H3 | MultiScale improves Advanced recognition. | **Not supported** by the matched three-seed mean: Full and No-Multiscale CER are essentially equal. |
+| H4 | Training-only augmentation improves Modern generalization. | Modern Augmentation ON has slightly lower mean validation CER than OFF, with mixed seed-level effects. |
 
-These are **hypotheses, not findings**. Accept or reject each only after recording the controlled experiment results.
+Interpretations above are limited to the **501-image validation split**, not an independent official TEST conclusion.
 
-## 2. Dataset and splits
+## 2. Dataset and preprocessing
 
-We use **[ORAND-CAR-2014](https://www.orand.cl/icfhr2014-hdsr/)** (CAR-A + CAR-B), a public research dataset of handwritten numeric amounts extracted from real bank cheques.
+**Source:** [ORAND-CAR-2014](https://www.orand.cl/icfhr2014-hdsr/), using CAR-A and CAR-B. Original download: [ORAND-CAR-2014.tar.gz](https://www.orand.cl/orand_car/ORAND-CAR-2014.tar.gz).
 
-| Partition | CAR-A | CAR-B | Total | Role |
+| Partition | CAR-A | CAR-B | Total | Use |
 | --- | ---: | ---: | ---: | --- |
-| Original official training set | 2,009 | 3,000 | 5,009 | Candidate pool for training/validation |
-| Our frozen training split | 1,808 | 2,699 | **4,507** | Model fitting |
-| Our frozen validation split | 201 | 300 | **501** | Early stopping, tuning, model selection |
-| Original official test set | 3,784 | 2,926 | **6,710** | **Final evaluation only** |
+| Original TRAIN | 2,009 | 3,000 | 5,009 | Development source |
+| Frozen project TRAIN | 1,808 | 2,699 | **4,507** | Training |
+| Frozen project VALIDATION | 201 | 300 | **501** | Early stopping, tuning, error analysis |
+| Official TEST | 3,784 | 2,926 | **6,710** | Controlled final evaluation |
 
-Our usable development pool has **5,008** images after excluding one byte-identical duplicated training image (the original archive remains unchanged). The train/validation split uses seed `403` and stratification by **CAR source and label length**. The frozen manifests are `data/splits/train.csv` and `data/splits/val.csv`.
+One exact duplicate training image (`b_car_004864.png`) was removed from the usable development manifest, leaving **5,008** samples. Split seed **403** was stratified by CAR subset and string length. All reported model runs use the same committed `data/splits/train.csv` and `data/splits/val.csv` fingerprints.
 
-**Data integrity and limitations:**
+**Audit scope:** no exact SHA-256 image overlap was detected between train/validation or original TRAIN/TEST; **writer independence and absence of perceptual near-duplicates were not proven**. Test labels were not required for the split construction. See [dataset documentation](data/DATASET.md).
 
-- Digit-only labels were checked against the image records; representative samples were visually reviewed.
-- No exact image SHA-256 overlap was found across our train/validation split or across the original official training/test partitions.
-- **Writer-independent splitting is not proven**, because verified writer IDs were not provided. Perceptual near-duplicate detection was not completed.
-- Some cheque images contain punctuation, separators, or currency marks. We follow the dataset's **digits-only ground truth** rather than trying to transcribe these marks.
-- The original training set contains digit strings with lengths **2-8**; it does not demonstrate robustness to every kind of handwriting or to leading-zero strings.
+Shared preprocessing: transparent pixels composited on white; grayscale; aspect-ratio-preserving resize to **48-pixel height**; `float32` values in `[0,1]`; right-padding within each batch with per-image valid widths. Training-only augmentation (when enabled) rotates within **+/-2 degrees** and varies brightness by about **+/-10%**. Neither validation nor TEST is augmented.
 
-### Obtain the dataset
-
-The archive is **not stored in Git**. Each team member can obtain it from:
-
-- **Official download:** [ORAND-CAR-2014.tar.gz](https://www.orand.cl/orand_car/ORAND-CAR-2014.tar.gz)
-- **Team shared drive (restricted access):** `ADD_TEAM_DRIVE_DATASET_LINK_HERE`
-
-The archive is about 194 MiB (203,530,245 bytes). The expected SHA-256 is:
+The original archive is **not committed to Git**. Put it at `data/raw/ORAND-CAR-2014.tar.gz`; the recorded SHA-256 is:
 
 ```text
 7c4b3d9e820bbcdfd291f5679b74013bd055b4f771dc64ebd8b8ce599ff4a61a
 ```
 
-Place the **unchanged** file here:
+## 3. Model implementations
 
-```text
-data/raw/ORAND-CAR-2014.tar.gz
-```
+All models implement `logits, output_lengths = model(images, valid_widths)`, where images have shape `[B,1,48,Wmax]` and CTC logits have shape `[B,T,11]`. Models with width-downsampling report appropriately shorter valid time lengths.
 
-On Windows PowerShell, optionally verify the download:
+| Registry model name | Architecture | Parameters | Saved checkpoint MiB |
+| --- | --- | ---: | ---: |
+| `baseline` | CNN + CTC | 94,091 | 0.36 |
+| `classic_scratch` | ResNet18 (scratch) + BiGRU + CTC | 13,541,323 | 51.73 |
+| `classic_pretrained` | ResNet18 (ImageNet pretrained) + BiGRU + CTC | 13,541,323 | 51.73 |
+| `modern` | CNN + Transformer + CTC | 1,183,179 | 5.51 |
+| `advanced` | MultiScale CNN + BiGRU + custom Attention + CTC | 1,245,867 | 4.77 |
+
+- **M1 Baseline:** small CNN, per-timestep linear classifier and CTC, without explicit GRU/Transformer.
+- **M2 Classic:** ResNet18 adapted for grayscale and horizontal sequence preservation, two-layer bidirectional GRU, CTC. Scratch and pretrained versions use the **same architecture**, but different backbone initialization. The pretrained variant starts from TorchVision's ImageNet weights.
+- **M3 Modern:** CNN, sinusoidal positions, two Transformer encoder layers with four attention heads and padding masking, CTC.
+- **M4 Advanced:** custom 3x3/5x5 MultiScale CNN feature block, BiGRU, custom four-head self-attention, residual feed-forward, CTC.
+- **M4 Ablation:** `advanced_no_multiscale` removes the custom MultiScale block. `advanced_no_attention` is implemented in code, but matched three-seed results **have not been recorded**.
+
+Sources: [model registry](src/models/registry.py) and [implementations](src/models/).
+
+## 4. Final validation comparison
+
+**These are VALIDATION metrics, NOT official TEST scores.** Each primary model was trained independently using final seeds **7, 21 and 42**. Reported numbers are **mean +/- sample SD**; SD for percentage metrics is in **percentage points**.
+
+| Model | CER (%) - lower better | Exact-string match (%) - higher better | Tuned LR | Dropout |
+| --- | ---: | ---: | ---: | ---: |
+| Baseline | 78.361 +/- 0.118 | 0.000 +/- 0.000 | 0.001 | 0.1 |
+| Classic Scratch | 3.242 +/- 0.253 | 85.828 +/- 0.998 | 0.0003 | 0.1 |
+| Classic Pretrained | 2.676 +/- 0.161 | 88.090 +/- 0.756 | 0.0001 | 0.1 |
+| Modern | 4.052 +/- 0.241 | 83.367 +/- 1.170 | 0.001 | 0.1 |
+| Advanced | 2.316 +/- 0.306 | 89.621 +/- 1.584 | 0.0003 | 0.1 |
+
+**Lowest mean validation CER among the five primary models:** Advanced, **2.316%**, with mean exact-string match **89.621%**. The Baseline has **78.361%** CER and **0%** exact-string matches; it is a deliberately simple but weak reference, not a working high-accuracy recognizer.
+
+All individual-seed results, losses, predictions, error analyses and curves are saved under:
+
+- [M1 Baseline](experiments/baseline_results/)
+- [M2 Classic Scratch](experiments/classic_scratch_results/)
+- [M2 Classic Pretrained](experiments/classic_pretrained_results/)
+- [M3 Modern](experiments/modern_results/)
+- [M4 Advanced](experiments/advanced_results/)
+
+## 5. Training and tuning protocol
+
+The controlled search uses exactly the same grid **for each of the five primary model versions**:
+
+| Trial | LR | Dropout |
+| ---: | ---: | ---: |
+| 01 | 0.001 | 0.1 |
+| 02 | 0.001 | 0.3 |
+| 03 | 0.0003 | 0.1 |
+| 04 | 0.0003 | 0.3 |
+| 05 | 0.0001 | 0.1 |
+| 06 | 0.0001 | 0.3 |
+
+- **Tuning seed:** `403`, using validation CER to choose the best trial.
+- **Final seeds:** `7, 21, 42`, independently initialized and fitted using the chosen per-model configuration.
+- **Training:** Adam, batch size 32, CTC loss, weight decay 0.0001, gradient clip 5.0, maximum 120 epochs, early stopping patience 20.
+- **Augmentation:** ON in regular tuning/final runs; OFF only for the controlled Modern comparison.
+- **Recorded study counts:** 30 tuning + 15 primary final + 3 Modern augmentation OFF + 3 Advanced no-multiscale = **51 scientific runs**. Internal smoke/tiny-overfit gates are not included.
+
+**Chosen tuning configurations (seed 403 is not a fourth final seed):**
+
+| Model | Best trial | LR | Dropout | Best tuning val CER (%) |
+| --- | ---: | ---: | ---: | ---: |
+| `baseline` | 1 | 0.001 | 0.1 | 78.271 |
+| `classic_scratch` | 3 | 0.0003 | 0.1 | 2.316 |
+| `classic_pretrained` | 5 | 0.0001 | 0.1 | 2.740 |
+| `modern` | 1 | 0.001 | 0.1 | 3.744 |
+| `advanced` | 3 | 0.0003 | 0.1 | 1.775 |
+
+The committed files `experiments/<model>_results/best_tuned_config.json` and `final/seed_<N>/config.json` are authoritative for historical runs. Base `configs/*.json` can contain pre-tuning defaults.
+
+## 6. Controlled studies: pretraining, augmentation, ablation
+
+### Pretrained vs scratch — M2
+
+Under the same data split, model structure and tuning budget, **Classic Scratch** records **3.242%** mean final-validation CER versus **2.676%** for **Classic Pretrained**. Pretrained is lower by **0.566 percentage points**. Each was independently tuned and therefore uses different selected learning rates; this is not an experiment isolating only the initial weights while keeping all optimization settings fixed.
+
+### Augmentation ON vs OFF — M3 Modern (actual executed study)
+
+Matched seeds and final learning rate `0.001` / dropout `0.1`; OFF changes only the augmentation switch, while ON reuses final Modern runs.
+
+| Condition | Validation CER mean (%) | Sample SD (pp) |
+| --- | ---: | ---: |
+| ON | 4.052 | 0.241 |
+| OFF | 4.194 | 0.226 |
+
+The ON mean is lower by **0.142 pp**, but the per-seed differences are not uniformly positive. Evidence: [`experiments/modern_results/augmentation_study.csv`](experiments/modern_results/augmentation_study.csv). **The older claim that this study was run for Classic Pretrained was incorrect.**
+
+### Ablation — M4 Full Advanced vs No-Multiscale
+
+Matched seeds `7,21,42`, with selected LR `0.0003` / dropout `0.1` and shared preprocessing.
+
+| Condition | Validation CER mean (%) | Sample SD (pp) |
+| --- | ---: | ---: |
+| Advanced Full | 2.316 | 0.306 |
+| Advanced No-Multiscale | 2.316 | 0.204 |
+
+Means are essentially **identical at reported precision**. Seed effects vary in direction, so there is **no demonstrated mean validation advantage** from MultiScale. No-Attention is **implementation only**. Evidence: [`ablation_results.csv`](experiments/advanced_results/ablation_results.csv).
+
+## 7. Error analysis and computational cost
+
+**Metrics:** corpus character error rate (total edit distance / total ground-truth characters), whole-string exact match, per-digit precision/recall/F1 from sequence alignment, and substitutions/deletions/insertions; broken down by CAR source and string length.
+
+**Recorded validation failures (seed 7; examples are pairs from committed `errors.csv` files):**
+
+| Model | Filename | Ground truth | Prediction | Observed error |
+| --- | --- | --- | --- | --- |
+| Baseline | `a_car_000207.png` | `10000` | `10` | Many deleted digits |
+| Classic Scratch | `a_car_000212.png` | `15366` | `15866` | Substitution |
+| Classic Pretrained | `a_car_000451.png` | `23104` | `218` | Several edits |
+| Modern | `a_car_000384.png` | `2510` | `1510` | Substitution |
+| Advanced | `a_car_000384.png` | `2510` | `250` | Deletion |
+
+The Baseline heavily collapses to predicting `10`; its saved diagnostics report extensive deletions and zero exact matches across three seeds. The cause is **not proven** to be solely lack of recurrence or a fault in CTC. See [`Baseline_Analysis.md`](Baseline_Analysis.md) and the per-seed `validation/` error files. Raw dataset image redistribution must respect the documented licence.
+
+**Computational cost:** mean +/- sample SD across final seeds; inference timing below is **model-forward only** (not image loading, preprocessing, decoding or full app latency).
+
+| Model | Train minutes mean +/- SD | Forward ms/image mean +/- SD | Seed 7 peak GPU allocated MiB | Seed 7 GPU |
+| --- | ---: | ---: | ---: | --- |
+| Baseline | 27.1 +/- 14.2 | 0.694 +/- 0.477 | 615.8 | RTX A1000 Laptop |
+| Classic Scratch | 63.8 +/- 14.6 | 3.503 +/- 0.185 | 1987.8 | RTX A1000 Laptop |
+| Classic Pretrained | 100.9 +/- 34.5 | 3.040 +/- 0.127 | 1988.0 | RTX A2000 Laptop |
+| Modern | 46.5 +/- 38.4 | 0.365 +/- 0.064 | 429.6 | RTX A1000 Laptop |
+| Advanced | 30.2 +/- 7.4 | 1.869 +/- 0.209 | 1465.4 | RTX 3060 Laptop |
+
+Different machines/GPU types and process interruptions limit direct wall-time comparisons. GPU values measure **PyTorch-allocated** memory, not total hardware memory. The [Advanced padding audit](experiments/padding_audit_results.json) also shows batch-size-dependent logits/validation metrics; use a documented **fixed evaluation batch size** (the historical evaluation used batch size 32) and disclose this sensitivity in comparisons.
+
+## 8. Setup and evaluation commands
+
+Clone the project and use a **consistent Python interpreter**. Windows PowerShell example:
 
 ```powershell
-Get-FileHash .\data\raw\ORAND-CAR-2014.tar.gz -Algorithm SHA256
+git clone https://github.com/alaa-sawy/AI403-Handwritten-Digit-Recognition.git
+cd AI403-Handwritten-Digit-Recognition
+python -m venv .venv
+& .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+& .\.venv\Scripts\python.exe -c "import torch,torchvision; print(torch.__version__,torchvision.__version__,torch.cuda.is_available())"
 ```
 
-### Prepare the images
+The committed requirements pin Torch `2.15.0` / TorchVision `0.29.1` (CUDA 13.2 builds on Windows/Linux). Use a Python version supported by those package wheels; team runs used Windows 11, Python 3.13/3.14 and different NVIDIA GPUs. CPU fallback is available. A virtual environment that imports Python but cannot import `torch` is **not** ready for model evaluation.
 
-Run the following **from the repository root** after the archive and the frozen `train.csv` / `val.csv` are in place:
+Download the unchanged ORAND archive and verify the SHA above, then run:
 
 ```powershell
-python data/prepare_images.py
+& .\.venv\Scripts\python.exe data/prepare_images.py
+& .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-This extracts the **5,008** original training/validation image files selected in the manifests into:
-
-```text
-data/processed/images/CAR-A/
-data/processed/images/CAR-B/
-```
-
-> **Important:** Despite the folder name `processed`, these files are original image copies, not pre-resized images. Grayscale conversion, resizing, normalization, and optional augmentation happen in the dataset loader at runtime. This preparation step does **not** open official test labels.
-
-**Common preprocessing (all models):**
-
-1. Convert to grayscale, compositing RGBA images against a white background where needed.
-2. Resize to **48 px height**, preserve aspect ratio, keep a **variable image width**.
-3. Convert pixels to `float32` and normalize to `[0, 1]`.
-4. Pad images to the widest image **within each batch**; keep the original valid widths.
-5. For the training split only, optionally use small rotations (about +/-2 degrees) and brightness changes (about +/-10%). Validation and test are never augmented.
-
-**Never regenerate the frozen split for an individual model.** All experiments must use the same committed `train.csv` and `val.csv` files.
-
-## 3. Installation and GPU support
-
-### New team member: clone the repository
-
-After M1 has pushed the project to GitHub, clone it using the **actual repository URL** shared by the team:
+**Validation evaluation** after placing the selected checkpoint from Drive at the canonical local path:
 
 ```powershell
-git clone YOUR_GITHUB_REPOSITORY_URL
-cd YOUR_CLONED_REPOSITORY_FOLDER
+& .\.venv\Scripts\python.exe -m src.evaluate --checkpoint checkpoints/advanced_results/final/seed_7/best.pt --split val
 ```
 
-Run all subsequent commands from this root directory. If the repository is private, accept the GitHub collaborator invitation first. Never run another teammate's training job in the same `experiments/` output folder.
+The evaluator loads the **model weights and stored config** from the checkpoint and writes `best_val_evaluation/` beside it. This command does **not** train the model.
 
-### Requirements
-
-- Python compatible with the pinned packages (the training environment was verified with **Python 3.14.7** on Windows 11).
-- `requirements.txt` in the repository root.
-- An NVIDIA GPU with a compatible driver is recommended for faster training; CPU execution is also supported.
-- Enough local disk space for the downloaded archive, extracted images, experiment logs, and checkpoints.
-
-On Windows PowerShell:
-
-```powershell
-# Run from the project root.
-python --version
-python -m pip install -r requirements.txt
-```
-
-The repository's single `requirements.txt` pins the **CUDA 13.2** builds of PyTorch and TorchVision on Windows/Linux; on macOS it uses the standard builds. A CUDA build **does not guarantee** that CUDA will be available on every machine: an NVIDIA GPU and suitable driver are required. The current `device: "auto"` trainer chooses **CUDA if available, otherwise CPU**; it does not currently select Apple MPS.
-
-Check PyTorch and GPU detection:
-
-```powershell
-python -c "import torch; print('PyTorch:',torch.__version__); print('CUDA:',torch.version.cuda); print('Available:',torch.cuda.is_available()); print('GPU:',torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU')"
-```
-
-NVIDIA users can also inspect their driver and VRAM:
-
-```powershell
-nvidia-smi
-```
-
-**Verified M1 training machine:** Windows 11, Python `3.14.7`, PyTorch `2.15.0+cu132`, NVIDIA RTX A1000 Laptop GPU (**4 GB VRAM**). The CUDA matrix-multiplication test passed. Other team members should record their **own** hardware and library versions; not every computer will deliver the same speed or numerical results.
-
-## 4. Quick start: run the baseline
-
-The commands below are run from the project root (the folder containing `src/`, `configs/`, and `data/`).
-
-### Step 1 - Check the data loader
-
-```powershell
-python -m src.datasets.dataset
-python -m unittest discover -s tests -p "test_data.py" -v
-```
-
-The dataset should report **4,507 training** and **501 validation** images. The data pipeline's four unit tests have passed on the M1 machine.
-
-### Step 2 - Check the shared trainer
-
-```powershell
-python -m unittest discover -s tests -p "test_trainer.py" -v
-python -m src.experiments_runner --model baseline --stage smoke
-```
-
-The shared trainer's six unit tests and baseline smoke test have passed. The smoke test trains on a very small subset; **it is not a model performance result**.
-
-### Step 3 - Tiny-overfit gate (already passed by M1)
-
-```powershell
-python -m src.experiments_runner --model baseline --stage tiny-overfit
-```
-
-This deliberately checks memorization on four **training** images. M1's test reached `4/4` exact matches after 151 epochs. This does **not** represent validation or official test accuracy. Do not rerun it unnecessarily while another training job is using the GPU.
-
-### Step 4 - Tune the baseline (six predefined trials)
+**Reproduction stages** (run only in a prepared, isolated experiment workspace; not needed to read existing results):
 
 ```powershell
 python -m src.experiments_runner --model baseline --stage tune
-```
-
-The tuning procedure automatically reads `configs/baseline.json` and `configs/protocol.json`, records all six results, then selects the configuration with the **lowest validation character error rate (CER)**.
-
-### Step 5 - Final training (three independent seeds)
-
-Only after tuning has completed:
-
-```powershell
-python -m src.experiments_runner --model baseline --stage final
-```
-
-This trains **three separate models** using seeds `7`, `21`, and `42`, and reports validation **mean +/- standard deviation**. It does not use official test labels.
-
-### Step 6 - Evaluate an existing checkpoint on validation
-
-```powershell
-python -m src.evaluate --checkpoint checkpoints/baseline_results/final/seed_7/best.pt --split val
-```
-
-Replace the seed or path with the checkpoint you want to evaluate. The evaluation outputs are saved next to that checkpoint in a `best_val_evaluation/` folder.
-
-## 5. Model interface and architecture plan
-
-All models must implement the **same callable interface**:
-
-```python
-logits, output_lengths = model(images, valid_widths)
-```
-
-| Tensor | Expected shape | Meaning |
-| --- | --- | --- |
-| `images` | `[B, 1, 48, Wmax]` | Batch of padded grayscale digit-string images |
-| `valid_widths` | `[B]` | Original width of each image before batch padding |
-| `logits` | `[B, T, 11]` | Unnormalized class scores at every output time step |
-| `output_lengths` | `[B]` | Number of **valid** time steps for each image |
-
-**CTC convention:** blank ID `0`; digit `0` has ID `1`; digit `9` has ID `10`. Preserve repeated and leading digits in the label string (for example, `0052` must stay a string). At training time, CTC receives `log_softmax` scores with shape `[T, B, 11]`.
-
-The encoder must supply valid lengths that reflect any downsampling of image width. CTC feasibility is checked, including extra time steps needed to separate repeated adjacent digits. Models with attention must mask padded sequence positions correctly.
-
-| Registry name | Planned architecture | Owner | Status |
-| --- | --- | --- | --- |
-| `baseline` | Small CNN + CTC | M1 | Implemented, tests passed; tuning underway |
-| `classic_scratch` | ResNet18 (scratch) + BiGRU + CTC | M2 | Awaiting implementation/integration |
-| `classic_pretrained` | ResNet18 (pretrained) + BiGRU + CTC | M2 | Awaiting implementation/integration |
-| `modern` | CNN + Transformer Encoder + CTC | M3 | Awaiting implementation/integration |
-| `advanced` | Custom MultiScale CNN + BiGRU + custom Multi-Head Self-Attention + CTC | M4 | Implemented; six final checkpoints validated; see M4 notes |
-| `advanced_no_multiscale` | Same Advanced model without MultiScaleBlock | M4 | Implemented and trained for three seeds; validation/test evidence must be reported with the documented protocol |
-| `advanced_no_attention` | Same Advanced model without the attention block | M4 | Registry/model implementation available; matched training and evaluation pending |
-
-**How to add a new model:**
-
-1. Implement the model in `src/models/` with a constructor accepting `dropout`.
-2. Ensure `forward(images, valid_widths)` returns `(logits, output_lengths)` as shown above.
-3. Use the expected names/classes from `src/models/registry.py` (or update the registry and tests consistently).
-4. Add `configs/<model_name>.json` before tuning. The runner currently falls back to `configs/baseline.json` when a model config is missing; **do not rely on that fallback silently** for a new architecture.
-5. Pass the unit/forward/CTC/backward, padding-mask (where applicable), smoke, and tiny-overfit checks **before** launching its six tuning trials.
-
-Example (after M2's implementation has been merged and tested):
-
-```powershell
-python -m src.experiments_runner --model classic_scratch --stage smoke
-python -m src.experiments_runner --model classic_scratch --stage tune
 python -m src.experiments_runner --model classic_scratch --stage final
+python -m src.experiments_runner --model classic_pretrained --stage final
+python -m src.experiments_runner --model modern --stage aug-study
+python -m src.experiments_runner --model advanced --stage ablation
 ```
 
-## 6. Experiments and fair comparison
+The paired `aug-study` and `ablation` stages assume their corresponding `final` runs have already been completed. **Do not rerun completed training just to build the report.**
 
-**One shared protocol** is used for every architecture: the same frozen split, preprocessing, dataset policy, CTC target encoding, evaluation code, search grid, and selection rule.
+## 9. Official TEST governance
 
-### Hyperparameter tuning grid
+The saved model results above use **VALIDATION, not TEST**. There are **no verified consolidated cross-model official TEST result tables** in the reviewed GitHub `main`. Existing M4 documentation references some historical official-test figures, so **do not falsely claim that official TEST has never been opened**.
 
-| Trial | Learning rate | Dropout |
-| ---: | ---: | ---: |
-| 1 | `0.001` | `0.1` |
-| 2 | `0.001` | `0.3` |
-| 3 | `0.0003` | `0.1` |
-| 4 | `0.0003` | `0.3` |
-| 5 | `0.0001` | `0.1` |
-| 6 | `0.0001` | `0.3` |
+Before any new TEST operation, reconcile previously accessed test data/results, the evaluation date, checkpoint SHA-256, code revision, selected models and batch size. **Freeze all choices before final evaluation** and never select/tune using test scores.
 
-- **Tuning seed:** `403` for all six trials of a given model.
-- **Final seeds:** `7`, `21`, `42` (fresh model initialization for each run).
-- **Optimizer:** Adam; **loss:** CTC; **augmentation:** enabled during tuning/final training unless a controlled study specifies otherwise.
-- **Selection metric:** lowest validation CER; validation CTC loss breaks ties between best epochs. The grid's trial order breaks equal-CER ties when choosing the best trial.
-- **Early stopping:** `epochs` is a *maximum*, and `patience` counts consecutive epochs without improvement. The current agreed baseline setup is **batch size 32, maximum 120 epochs, patience 20**; verify the actual committed `configs/baseline.json` before starting the grid.
-- **Batch size:** fixed during each six-trial comparison. Document any model-specific adjustments needed to fit GPU memory instead of silently changing the comparison protocol.
+The project supports `data/prepare_final_test.py --confirm-final` to create the locally stored 6,710-sample TEST manifest/images and `python -m src.evaluate --checkpoint <checkpoint> --split test --final-test` for an authorized final pass. The preparation script will refuse to overwrite `data/splits/test.csv`. Avoid repeated TEST exposure when earlier results might already exist. Any approved test summary must be clearly labelled and recorded separately from validation results; never commit test labels or extracted images.
 
-The research plan uses **six tuning runs per model version** and **three final seeds per version**. Six trials and 51 total runs are team-planning choices; the course requires a fair tuning study and **at least three seeds per final configuration**, not exactly 51 runs.
+## 10. Checkpoint storage and reproducibility
 
-### Additional controlled studies
-
-| Study | Comparison | Command (after the prerequisites) |
-| --- | --- | --- |
-| Augmentation | Classic Pretrained, ON vs. OFF, matched seeds | `python -m src.experiments_runner --model classic_pretrained --stage aug-study` |
-| Pretraining | Classic Scratch vs. Classic Pretrained | Tune and finalize both independently, then compare their results |
-| Ablation A | Advanced Full vs. No Multiscale, seeds 7/21/42 | Existing results under `experiments/advanced_results/final/` and `ablation_no_multiscale/` |
-| Ablation B | Advanced Full vs. No Attention, matched seeds | Implementation exists; training/evaluation has not yet been completed |
-
-**M4 validation summary:** Full Advanced validation CER for seeds 7/21/42: 2.4315%, 2.5473%, 1.9684%. No-Multiscale validation CER: 2.0841%, 2.4701%, 2.3929%. The approximate means are both 2.3157%; the seed-level results vary, so these results do not support a claim that MultiScale improves every run. These are validation results, not a universal performance guarantee.
-
-The No-Attention variant is a code-level ablation at this stage. Do not report an accuracy/CER effect for it until the matched three-seed runs have completed. Run each scientific comparison with aligned splits, preprocessing, tuning/selection policy, and evaluation batch size.
-
-### Planned run budget
-
-| Group | Count |
-| --- | ---: |
-| Hyperparameter tuning: 5 versions x 6 | 30 |
-| Final training: 5 versions x 3 seeds | 15 |
-| Advanced no-multiscale ablation: 3 seeds | 3 |
-| Classic augmentation OFF: 3 seeds | 3 |
-| **Total planned** | **51** |
-
-Do not count **smoke tests**, **tiny-overfit gates**, or **optional troubleshooting runs** as part of these 51 scientific comparisons.
-
-## 7. Metrics, artifacts, and checkpoints
-
-### Metrics
-
-- **Corpus CER** = total Levenshtein edits / total ground-truth characters (lower is better; values can exceed 1 if many extra characters are predicted).
-- **Exact-string accuracy** = proportion of entire image labels predicted perfectly (higher is better).
-- **Per-digit precision, recall, F1, and substitution/deletion/insertion counts** for digits `0-9`, computed after sequence alignment.
-- **Breakdowns** by CAR-A vs. CAR-B and by label length.
-- **Across seeds:** mean and sample standard deviation for the final configurations.
-- **Computational cost:** training seconds, inference milliseconds per image, parameter count, model/checkpoint size, hardware, CUDA peak *allocated* memory, and observed process RAM (where available).
-
-### M4 checkpoint and padding audit
-
-The six final checkpoints are located at:
+The team-provided checkpoint Drive folder is [here](https://drive.google.com/drive/folders/1y6Tq6SnGyZ_oa1Vexl4Ovsx27PQArUZL?usp=sharing). **Its current contents were not independently enumerated in this README audit**. The project owner reports that model weights are being organized there. All **21** checkpoint locations required for the recorded full/final studies are:
 
 ```text
-checkpoints/advanced_results/final/seed_{7,21,42}/best.pt
-checkpoints/advanced_results/ablation_no_multiscale/seed_{7,21,42}/best.pt
-```
-
-They were loaded with `torch.load(..., weights_only=True)`, reconstructed from their saved configurations, loaded with `load_state_dict(..., strict=True)`, and passed a forward-shape check producing `[2, 117, 11]`. SHA-256 fingerprints were recorded separately during validation. Checkpoint binaries are not committed to Git; distribute them through the team's restricted Drive link.
-
-The padding audit compared one validation image (width 100) alone and paired with a wider image (width 316), for each of the six checkpoints. The selected image's decoded prediction remained `540`, but valid-position logits differed (maximum absolute differences approximately 0.477–1.281). Full-validation CER/exact-match values also varied across batch sizes 1, 8, 16, 32, and 64. This is evidence of batch-padding sensitivity, not proof that every sample changes prediction. Use one fixed evaluation batch size for reported comparisons and document it. The audit output is `experiments/padding_audit_results.json`.
-
-The six `run_summary.json` files for the final and No-Multiscale runs use project-relative checkpoint paths to improve portability. The original historical tuning/gate summaries are not part of that path rewrite.
-
-### Where results are stored
-
-For the baseline, the runner creates paths such as:
-
-```text
-experiments/baseline_results/
-  tuning_results.csv
-  best_tuned_config.json
-  tuning/
-    trial_01/
-      config.json
-      history.csv
-      loss_curve.png
-      cer_curve.png
-      run_summary.json
-      validation/
-        metrics.json
-        per_digit_metrics.csv
-        substitution_confusions.csv
-        predictions.csv
-        errors.csv
-    trial_02/ ... trial_06/
-  final_runs.csv
-  final_mean_sd.json
-  final/
-    seed_7/
-    seed_21/
-    seed_42/
-```
-
-Model weights are saved separately:
-
-```text
-checkpoints/baseline_results/tuning/trial_01/best.pt
-checkpoints/baseline_results/final/seed_7/best.pt
-```
-
-**GitHub:** commit small `experiments/` logs, configurations, result tables, and plots when they are complete. **Do not commit** raw datasets, extracted images, temporary test labels, large checkpoints, or secrets. Upload final selected model checkpoints to a restricted shared drive and add the download link when available: `ADD_TEAM_DRIVE_CHECKPOINTS_LINK_HERE`.
-
-**Reproducibility:** each run saves its full config and train/validation CSV SHA-256 fingerprints. The runner can reuse a completed tuning run only when its configuration, split hashes, and checkpoint agree. Never overwrite or delete a running trial's output directory.
-
-## 8. Final test protocol
-
-**Test-set governance must be reported accurately.** The project has existing official-test result figures in M4 project records; therefore this README does not claim that the test set is still sealed. Before submission, reconcile the test-evaluation date, exact checkpoint hashes, code version, and whether any model/design decisions were made after seeing test results. Test results must be presented as final evaluation only and must not be used for further tuning or model selection.
-
-For any remaining authorized final evaluation, first confirm the team's frozen protocol and record the exact checkpoint/configuration and evaluation date. The documented preparation/evaluation commands are:
-
-```powershell
-python data/prepare_final_test.py --confirm-final
-```
-
-Then evaluate the final selected checkpoints, for example:
-
-```powershell
-python -m src.evaluate --checkpoint checkpoints/baseline_results/final/seed_7/best.pt --split test --final-test
-```
-
-The evaluator writes detailed outputs next to the checkpoint in `best_test_evaluation/`; copy approved **summary tables and plots** into `experiments/` for submission. Keep `data/splits/test.csv`, `data/final_test_images/`, and the original archive **out of Git**. Do not revise the model or tune hyperparameters based on the official test results.
-
-## 9. Repository structure
-
-```text
-AI403/
-|-- README.md
-|-- requirements.txt
-|-- .gitignore
-|-- configs/
-|   |-- baseline.json
-|   `-- protocol.json
-|-- data/
-|   |-- raw/                    # local only; NOT committed
-|   |-- processed/              # local only; original image cache
-|   |-- splits/
-|   |   |-- train.csv           # commit frozen manifest
-|   |   |-- val.csv             # commit frozen manifest
-|   |   `-- test_manifest_sealed.csv  # test names only
-|   |-- prepare_images.py
-|   |-- make_splits.py
-|   `-- prepare_final_test.py
-|-- src/
-|   |-- datasets/
-|   |   |-- preprocess.py
-|   |   |-- augment.py
-|   |   `-- dataset.py
-|   |-- models/
-|   |   |-- baseline.py
-|   |   `-- registry.py        # other models added by M2-M4
-|   |-- ctc_utils.py
-|   |-- train.py
-|   |-- evaluate.py
-|   `-- experiments_runner.py
-|-- tests/
-|   |-- test_data.py
-|   `-- test_trainer.py
-|-- experiments/                  # logs, results, plots in Git
-|-- checkpoints/                  # local/Drive; NOT committed
-|-- demo/                         # to be added by demo owner
-|-- report/                       # final report and slides
-`-- contributions/                # signed individual logs
-```
-
-This is the **target repository organization**; some model files, report files, and demo entry points may still be under integration. The M4 implementation is in `src/models/advanced.py`, with registry selection in `src/models/registry.py` and focused tests in `tests/test_advanced.py`.
-
-Suggested `.gitignore` rules:
-
-```gitignore
-data/raw/
-data/processed/
-data/audit_outputs/
-data/final_test_images/
-data/splits/test.csv
 checkpoints/
-__pycache__/
-*.pyc
-.venv/
-.env
-*.pt
-*.pth
-*.tar.gz
-*.rar
+  baseline_results/final/seed_{7,21,42}/best.pt
+  classic_scratch_results/final/seed_{7,21,42}/best.pt
+  classic_pretrained_results/final/seed_{7,21,42}/best.pt
+  modern_results/final/seed_{7,21,42}/best.pt
+  modern_results/augmentation_off/seed_{7,21,42}/best.pt
+  advanced_results/final/seed_{7,21,42}/best.pt
+  advanced_results/ablation_no_multiscale/seed_{7,21,42}/best.pt
 ```
 
-**Do not ignore `experiments/`**: the coursework requires logs, result tables, and plots as evidence. Check `git status` before pushing to prevent accidental dataset or checkpoint uploads.
+A team Drive upload may use alternative folder names (notably `advanced_no_multiscale_results/ablation_no_multiscale`). Map downloaded files to the **canonical local paths** above to run the shared evaluator, without changing their contents. Interrupted runs and `gates/` checkpoint folders are not final deliverables. Large checkpoints belong in Drive; small logs/JSON/CSV/plots belong in Git.
 
-## 10. Team workflow
+**Historical exception:** three small Baseline `best.pt` files are still tracked on GitHub, despite new `checkpoints/` uploads being excluded by `.gitignore`. Removing these should be a *separate* clean-up only after their Drive copies are verified.
 
-| Member | Main implementation responsibility |
+`experiments/` holds saved tuning/final records, loss/CER plots, per-digit tables, predictions, error analyses, split SHA-256s, hardware and run summaries. **Gate output directories are deliberately not versioned**, though test code remains.
+
+**Reproducibility caution:** several historical `run_summary.json` entries contain **absolute checkpoint paths from the original laptops**. `src/experiments_runner.py` validates those paths before reusing prior output directories. A fresh clone with committed logs but missing historical checkpoints can refuse `tune`/`final` reuse; restoring the correct checkpoint and adjusting to a controlled isolated reproduction workflow is safer than overwriting old results. Do not mix checkpoints from different seeds or models.
+
+## 11. Repository contents and tests
+
+Verified main-branch source structure:
+
+```text
+AI403-Handwritten-Digit-Recognition/
+  README.md                 requirements.txt
+  configs/                  data/                 src/
+  src/models/{baseline,classic,modern,advanced,registry}.py
+  src/{ctc_utils,train,evaluate,experiments_runner,modern_gate}.py
+  tests/{test_data,test_trainer,test_classic,test_modern,test_advanced}.py
+  experiments/              docs/
+  Baseline_Analysis.md      M1_Contribution_Log.md
+  AI403_M4_Advanced_Architecture_and_Ablation_Report_M4_Validation_Added.docx
+```
+
+`demo/`, an integrated `report/` with official final PDF/slides, and complete `contributions/` are **not present in the reviewed main snapshot**. The M4 DOCX is *model-specific supporting documentation*, not the final team report.
+
+**Tests (no new training):**
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+Smoke and tiny-overfit checks are local debugging tools and do **not** replace full three-seed validation or official TEST. No Gate result/checkpoint package is required for Drive submission.
+
+## 12. Deliverables still to finalize
+
+The course brief requires a **15–25 page report with seven mandatory tables**, a **15-minute presentation**, a **5-minute live demo**, complete experiment/error analyses, reproducible checkpoints and individual co-signed contribution logs.
+
+| Deliverable | Current verified status |
 | --- | --- |
-| **M1** | Dataset selection/audit/splits, data loader, preprocessing/augmentation, CNN+CTC baseline, shared trainer and evaluation infrastructure |
-| **M2** | Classic scratch/pretrained architectures and their model-specific checks |
-| **M3** | Modern CNN+Transformer architecture and padding-mask checks |
-| **M4** | Advanced CNN + BiGRU + custom attention, No-Multiscale study, No-Attention ablation implementation, checkpoint validation, padding audit, and Advanced documentation |
-| **M5 / integration owner** | Demo, final integration, comparison/report coordination (confirm assignments with the team) |
+| Five primary models + three-seed validation | **Recorded on GitHub** |
+| Modern augmentation / Advanced No-Multiscale | **Recorded on GitHub** |
+| Checkpoint package | **User reports Drive uploads**; final 21-file audit recommended |
+| Official TEST | **Reconcile prior M4 evidence and publish a verified final comparison** |
+| Live demo | **Under development by M5**; no confirmed app/launch command on `main` |
+| Team report PDF, slides | Not yet present as unified final artifacts on `main` |
+| Individual contribution + peer evaluation | M1 log present; other signed records not verified |
+| Team name, IDs, final report/demo links | Need verified team details |
 
-Recommended collaboration process:
+**Official hand-in:** one ZIP named `DL_Project_TeamName.zip` containing `TeamName_Report.pdf`, `TeamName_Slides.pdf` (or PPTX) and a text file with the Git repository URL. Add the supervising TA as repository collaborator. Put large data/checkpoints in Drive and include the relevant links here. The course brief lists **20 November 2026** as the deadline. Do not upload raw dataset images to GitHub.
 
-1. Pull the latest `main` before creating a feature branch (for example `feature/classic`, `feature/modern`, or `feature/advanced`).
-2. Keep frozen split manifests and the shared CTC label mapping unchanged.
-3. Implement and test each model through the shared interface, and add an explicit model config.
-4. Open a pull request; resolve conflicts without overwriting another person's trainer or experiment logs.
-5. Merge tested code, run each model's six tuning trials, then its three final seeds.
-6. Update `experiments/`, the report tables, and the **individual contribution logs** with commit and run evidence.
+## 13. Team responsibilities and references
 
-Each student's contribution log must describe the actual tasks, hours, evidence, and problems, and be co-signed by another teammate.
+**Team name, members and student IDs:** not yet verified; add them before official submission rather than inventing identities.
 
-**Submission (20 November 2026):** organized repository, dataset documentation, checkpoints or download links, experiment tables and plots, report (15-25 pages), slides, a working live demo, and contribution logs. See the official course brief for exact submission naming and TA instructions.
-
-### Demo status
-
-The live image-to-string demo is a **required deliverable but not yet marked complete** in this README. Once implemented and tested, replace this subsection with the verified command to launch the actual app, plus the path to the final checkpoint and an example input/output. Do **not** invent a demo command before the app exists.
-
-## 11. Troubleshooting
-
-| Symptom | What to check |
+| Workstream | Recorded responsibility |
 | --- | --- |
-| `FileNotFoundError: ... data/processed/images/...` | Download the archive to `data/raw/`, confirm frozen `train.csv`/`val.csv` exist, then run `python data/prepare_images.py`. |
-| `CUDA available: False` | Check `nvidia-smi`, compatible NVIDIA drivers, the installed PyTorch build, and your environment. The trainer can fall back to CPU. |
-| `CUDA out of memory` | Record the hardware and failure; consider reducing per-device batch size or implementing gradient accumulation *with documented effective batch size*. Do not silently alter the experiment protocol mid-grid. |
-| CTC output length error | Confirm the CNN width reduction and `output_lengths`, especially for repeated adjacent target digits. |
-| Validation CER is high during a smoke test | Smoke/tiny-overfit are correctness gates, **not** measures of generalization. Use full validation after proper training. |
-| Missing model implementation | Check the corresponding `src/models/` module, registry entry, config, and model-specific tests; registering a name alone does not implement an architecture. |
-| Existing partial run blocks `tune` | Inspect the existing run directory and logs. The runner refuses to reuse an incomplete run to avoid accidental mixing of results. Back it up and use a controlled recovery. |
-| A clone lacks the dataset | Raw datasets are intentionally not committed. Use the official source or the restricted team Drive link above. |
+| M1 | Dataset audit/splits, shared pipeline, CNN-CTC baseline |
+| M2 | ResNet18 scratch/pretrained Classic, tuning and final comparisons |
+| M3 | CNN-Transformer, augmentation ON/OFF and masking checks |
+| M4 | Custom MultiScale/attention Advanced, no-multiscale ablation, padding audit |
+| M5 | Integration, demo and final hand-in coordination (in progress) |
 
-## 12. Credits, citation, and licensing
+**References and external components**
 
-### Dataset citation
+1. Diem et al. (2014), *ICFHR 2014 Competition on Handwritten Digit String Recognition in Challenging Datasets.* [Official dataset](https://www.orand.cl/icfhr2014-hdsr/).
+2. Graves et al. (2006), *Connectionist Temporal Classification: Labelling Unsegmented Sequence Data with Recurrent Neural Networks.* ICML.
+3. Shi, Bai and Yao (2017), *An End-to-End Trainable Neural Network for Image-Based Sequence Recognition and Its Application to Scene Text Recognition.* [arXiv](https://arxiv.org/abs/1507.05717).
+4. He et al. (2016), *Deep Residual Learning for Image Recognition.* [arXiv](https://arxiv.org/abs/1512.03385).
+5. Vaswani et al. (2017), *Attention Is All You Need.* [arXiv](https://arxiv.org/abs/1706.03762).
+6. [PyTorch](https://pytorch.org/), [TorchVision ResNet18/ImageNet weights](https://pytorch.org/vision/stable/models/generated/torchvision.models.resnet18.html), Pillow, NumPy, Matplotlib and psutil.
 
-Diem, M., Fiel, S., Kleber, F., Sablatnig, R., Saavedra, J. M., Contreras, D., Barrios, J. M., & Oliveira, L. S. (2014). **ICFHR 2014 Competition on Handwritten Digit String Recognition in Challenging Datasets (HDSRC 2014)**. *International Conference on Frontiers in Handwriting Recognition (ICFHR)*.
-
-Official project and dataset: <https://www.orand.cl/icfhr2014-hdsr/>
-
-**Dataset license:** [Creative Commons BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/). Credit the dataset creators; use it only in accordance with the license, and **do not publish modified dataset images** in this repository. The data remains separate from the project's code and any code license the team may later choose.
-
-**Frameworks/tools:** PyTorch, TorchVision (where used by the Classic models), Pillow, NumPy, Matplotlib, and psutil. The M4 attention operation is implemented as a custom PyTorch module rather than calling `nn.MultiheadAttention` in the model forward path. Cite any third-party architecture implementations or pretrained weights actually used in the final report.
-
-### Team and links (fill before submission)
-
-- **Team name:** `ADD_TEAM_NAME`
-- **Members / student IDs:** `ADD_MEMBER_NAMES_AND_IDS`
-- **Repository:** `ADD_GITHUB_REPOSITORY_LINK`
-- **Dataset Drive:** `ADD_TEAM_DRIVE_DATASET_LINK_HERE`
-- **Final checkpoints Drive:** `ADD_TEAM_DRIVE_CHECKPOINTS_LINK_HERE`
-- **Report / slides / demo:** link the finished artifacts here after verification.
+The source documentation records the dataset as **CC BY-NC-ND 4.0**; comply with attribution, noncommercial use and distribution restrictions. External pretrained components must be cited and adapted. Prediction code does not rely on third-party AI inference APIs.
 
 ---
 
-*This README documents the implementation and experiment protocol. Experimental results are reported only when a run has completed and the saved metrics have been verified. The original dataset and course requirements remain the authoritative sources for licensing and submission rules.*
+*All numeric performance claims in this README are derived from committed validation CSV/JSON records. Only verified final TEST results may subsequently be labelled official TEST.*

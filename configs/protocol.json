@@ -1,11 +1,26 @@
 {
-  "learning_rates": [0.001, 0.0003, 0.0001],
-  "dropouts": [0.1, 0.3],
+  "learning_rates": [
+    0.001,
+    0.0003,
+    0.0001
+  ],
+  "dropouts": [
+    0.1,
+    0.3
+  ],
   "tuning_seed": 403,
-  "final_seeds": [7, 21, 42],
+  "final_seeds": [
+    7,
+    21,
+    42
+  ],
   "tuning_augmentation": true,
-  "augmentation_study_model": "classic_pretrained",
+  "augmentation_study_model": "modern",
   "model_versions": [
-    "baseline", "classic_scratch", "classic_pretrained", "modern", "advanced"
+    "baseline",
+    "classic_scratch",
+    "classic_pretrained",
+    "modern",
+    "advanced"
   ]
 }
