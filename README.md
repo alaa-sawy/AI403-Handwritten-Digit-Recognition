@@ -233,7 +233,7 @@ The paired `aug-study` and `ablation` stages assume their corresponding `final` 
 
 ## 9. Official TEST governance
 
-The saved model results above use **VALIDATION, not TEST**. There are **no verified consolidated cross-model official TEST result tables** in the reviewed GitHub `main`. Existing M4 documentation references some historical official-test figures, so **do not falsely claim that official TEST has never been opened**.
+The primary model table above uses **VALIDATION, not TEST**. A [separately audited M4 Official TEST summary](docs/M4_Official_Test_Evidence.md) is now included, covering Advanced Full and No-Multiscale only; there is **no consolidated cross-model official TEST result table** for M1-M4. Do **not** claim that official TEST has never been opened. The recorded project work period is 17-20 November 2026; source-ZIP file timestamps for M4 test results indicate 18 November, but they are not an independent execution audit log.
 
 Before any new TEST operation, reconcile previously accessed test data/results, the evaluation date, checkpoint SHA-256, code revision, selected models and batch size. **Freeze all choices before final evaluation** and never select/tune using test scores.
 
@@ -297,7 +297,7 @@ The course brief requires a **15–25 page report with seven mandatory tables**,
 | Five primary models + three-seed validation | **Recorded on GitHub** |
 | Modern augmentation / Advanced No-Multiscale | **Recorded on GitHub** |
 | Checkpoint package | **User reports Drive uploads**; final 21-file audit recommended |
-| Official TEST | **Reconcile prior M4 evidence and publish a verified final comparison** |
+| Official TEST | **M4 archived results independently audited and summarized**; complete cross-model final test and original run provenance remain outstanding |
 | Live demo | **Under development by M5**; no confirmed app/launch command on `main` |
 | Team report PDF, slides | Not yet present as unified final artifacts on `main` |
 | Individual contribution + peer evaluation | M1 log present; other signed records not verified |
