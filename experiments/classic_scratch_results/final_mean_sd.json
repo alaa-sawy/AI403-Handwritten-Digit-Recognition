@@ -1,0 +1,16 @@
+{
+  "group": "classic_scratch",
+  "seeds": [
+    7,
+    21,
+    42
+  ],
+  "val_cer_mean": 0.032419915090698574,
+  "val_cer_sd": 0.0025308523829803164,
+  "val_exact_match_mean": 0.8582834331337326,
+  "val_exact_match_sd": 0.009980039920159667,
+  "train_seconds_mean": 3826.628608166667,
+  "train_seconds_sd": 875.1180148143691,
+  "inference_ms_per_image_mean": 3.5032884231392116,
+  "inference_ms_per_image_sd": 0.1853079540532397
+}
