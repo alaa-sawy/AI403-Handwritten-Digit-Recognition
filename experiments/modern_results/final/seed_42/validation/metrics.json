@@ -1,0 +1,51 @@
+{
+  "cer": 0.043226553454264766,
+  "exact_match": 0.8203592814371258,
+  "sample_count": 501,
+  "total_edits": 112,
+  "total_characters": 2591,
+  "by_source_and_length": {
+    "length:2": {
+      "cer": 0.0,
+      "exact_match": 1.0,
+      "samples": 2
+    },
+    "length:3": {
+      "cer": 0.05,
+      "exact_match": 0.85,
+      "samples": 20
+    },
+    "length:4": {
+      "cer": 0.06493506493506493,
+      "exact_match": 0.7792207792207793,
+      "samples": 77
+    },
+    "length:5": {
+      "cer": 0.04285714285714286,
+      "exact_match": 0.8238095238095238,
+      "samples": 210
+    },
+    "length:6": {
+      "cer": 0.03333333333333333,
+      "exact_match": 0.8514285714285714,
+      "samples": 175
+    },
+    "length:7": {
+      "cer": 0.07563025210084033,
+      "exact_match": 0.5882352941176471,
+      "samples": 17
+    },
+    "source:CAR-A": {
+      "cer": 0.06820682068206821,
+      "exact_match": 0.7512437810945274,
+      "samples": 201
+    },
+    "source:CAR-B": {
+      "cer": 0.029726516052318668,
+      "exact_match": 0.8666666666666667,
+      "samples": 300
+    }
+  },
+  "ctc_loss": 0.20868689044120306,
+  "inference_ms_per_image": 0.33143353302258544
+}
