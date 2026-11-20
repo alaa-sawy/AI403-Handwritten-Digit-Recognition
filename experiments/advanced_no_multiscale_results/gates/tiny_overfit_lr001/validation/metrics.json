@@ -1,0 +1,21 @@
+{
+  "cer": 0.0,
+  "exact_match": 1.0,
+  "sample_count": 4,
+  "total_edits": 0,
+  "total_characters": 8,
+  "by_source_and_length": {
+    "length:2": {
+      "cer": 0.0,
+      "exact_match": 1.0,
+      "samples": 4
+    },
+    "source:CAR-A": {
+      "cer": 0.0,
+      "exact_match": 1.0,
+      "samples": 4
+    }
+  },
+  "ctc_loss": 0.16787105798721313,
+  "inference_ms_per_image": 6.434724999962782
+}
