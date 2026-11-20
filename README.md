@@ -6,7 +6,7 @@
 
 **Approach:** One shared dataset, training protocol, CTC decoder, and evaluation pipeline for a CNN baseline and three deep-learning architecture families (Classic, Modern, Advanced).
 
-> **Project status (17 November 2026):** The dataset pipeline, CNN+CTC baseline, shared trainer, and training/evaluation tests are implemented. Baseline hyperparameter tuning is in progress. Classic, Modern, Advanced, full comparisons, and the live demo must be integrated and verified before marking them complete. **No final test-set scores are reported yet.**
+> **Project status (20 November 2026):** The shared dataset/training/evaluation pipeline and multiple model families are being integrated by the team. The M4 Advanced model code includes a custom multi-scale CNN block, BiGRU, custom multi-head self-attention, and CTC classifier. The registry supports `advanced`, `advanced_no_multiscale`, and `advanced_no_attention`. Six final Advanced/No-Multiscale checkpoints have passed strict state-dictionary loading and forward-pass checks. A padding audit found that logits and validation metrics can vary with batch composition/size; evaluation batch size must therefore be fixed and reported. The No-Attention variant is implemented in code, but matched three-seed training and evaluation are still pending. See the M4 notes below; do not treat implementation-only ablations as measured findings.
 
 ## Quick navigation
 
@@ -240,8 +240,9 @@ The encoder must supply valid lengths that reflect any downsampling of image wid
 | `classic_scratch` | ResNet18 (scratch) + BiGRU + CTC | M2 | Awaiting implementation/integration |
 | `classic_pretrained` | ResNet18 (pretrained) + BiGRU + CTC | M2 | Awaiting implementation/integration |
 | `modern` | CNN + Transformer Encoder + CTC | M3 | Awaiting implementation/integration |
-| `advanced` | Multiscale CNN + BiGRU + Attention + CTC | M4 | Awaiting implementation/integration |
-| `advanced_no_multiscale` | Advanced ablation without multiscale fusion | M4 | Planned for ablation |
+| `advanced` | Custom MultiScale CNN + BiGRU + custom Multi-Head Self-Attention + CTC | M4 | Implemented; six final checkpoints validated; see M4 notes |
+| `advanced_no_multiscale` | Same Advanced model without MultiScaleBlock | M4 | Implemented and trained for three seeds; validation/test evidence must be reported with the documented protocol |
+| `advanced_no_attention` | Same Advanced model without the attention block | M4 | Registry/model implementation available; matched training and evaluation pending |
 
 **How to add a new model:**
 
@@ -289,9 +290,12 @@ The research plan uses **six tuning runs per model version** and **three final s
 | --- | --- | --- |
 | Augmentation | Classic Pretrained, ON vs. OFF, matched seeds | `python -m src.experiments_runner --model classic_pretrained --stage aug-study` |
 | Pretraining | Classic Scratch vs. Classic Pretrained | Tune and finalize both independently, then compare their results |
-| Ablation | Advanced Full vs. No Multiscale, matched seeds | `python -m src.experiments_runner --model advanced --stage ablation` |
+| Ablation A | Advanced Full vs. No Multiscale, seeds 7/21/42 | Existing results under `experiments/advanced_results/final/` and `ablation_no_multiscale/` |
+| Ablation B | Advanced Full vs. No Attention, matched seeds | Implementation exists; training/evaluation has not yet been completed |
 
-Run each study **only after the corresponding final stage is complete**. The augmentation-off study reuses the three ON final runs and trains three matched OFF runs. The advanced ablation removes one named component while keeping the other experimental settings as aligned as possible.
+**M4 validation summary:** Full Advanced validation CER for seeds 7/21/42: 2.4315%, 2.5473%, 1.9684%. No-Multiscale validation CER: 2.0841%, 2.4701%, 2.3929%. The approximate means are both 2.3157%; the seed-level results vary, so these results do not support a claim that MultiScale improves every run. These are validation results, not a universal performance guarantee.
+
+The No-Attention variant is a code-level ablation at this stage. Do not report an accuracy/CER effect for it until the matched three-seed runs have completed. Run each scientific comparison with aligned splits, preprocessing, tuning/selection policy, and evaluation batch size.
 
 ### Planned run budget
 
@@ -315,6 +319,21 @@ Do not count **smoke tests**, **tiny-overfit gates**, or **optional troubleshoot
 - **Breakdowns** by CAR-A vs. CAR-B and by label length.
 - **Across seeds:** mean and sample standard deviation for the final configurations.
 - **Computational cost:** training seconds, inference milliseconds per image, parameter count, model/checkpoint size, hardware, CUDA peak *allocated* memory, and observed process RAM (where available).
+
+### M4 checkpoint and padding audit
+
+The six final checkpoints are located at:
+
+```text
+checkpoints/advanced_results/final/seed_{7,21,42}/best.pt
+checkpoints/advanced_results/ablation_no_multiscale/seed_{7,21,42}/best.pt
+```
+
+They were loaded with `torch.load(..., weights_only=True)`, reconstructed from their saved configurations, loaded with `load_state_dict(..., strict=True)`, and passed a forward-shape check producing `[2, 117, 11]`. SHA-256 fingerprints were recorded separately during validation. Checkpoint binaries are not committed to Git; distribute them through the team's restricted Drive link.
+
+The padding audit compared one validation image (width 100) alone and paired with a wider image (width 316), for each of the six checkpoints. The selected image's decoded prediction remained `540`, but valid-position logits differed (maximum absolute differences approximately 0.477–1.281). Full-validation CER/exact-match values also varied across batch sizes 1, 8, 16, 32, and 64. This is evidence of batch-padding sensitivity, not proof that every sample changes prediction. Use one fixed evaluation batch size for reported comparisons and document it. The audit output is `experiments/padding_audit_results.json`.
+
+The six `run_summary.json` files for the final and No-Multiscale runs use project-relative checkpoint paths to improve portability. The original historical tuning/gate summaries are not part of that path rewrite.
 
 ### Where results are stored
 
@@ -359,9 +378,9 @@ checkpoints/baseline_results/final/seed_7/best.pt
 
 ## 8. Final test protocol
 
-**Official test labels are sealed during all development.** Neither training, early stopping, trial selection, ablations, nor the demo-selection process may use official test scores.
+**Test-set governance must be reported accurately.** The project has existing official-test result figures in M4 project records; therefore this README does not claim that the test set is still sealed. Before submission, reconcile the test-evaluation date, exact checkpoint hashes, code version, and whether any model/design decisions were made after seeing test results. Test results must be presented as final evaluation only and must not be used for further tuning or model selection.
 
-After the team has **frozen** model choices, hyperparameters, checkpoints, and selection rules, the designated evaluator can explicitly unlock the 6,710 official test images/labels:
+For any remaining authorized final evaluation, first confirm the team's frozen protocol and record the exact checkpoint/configuration and evaluation date. The documented preparation/evaluation commands are:
 
 ```powershell
 python data/prepare_final_test.py --confirm-final
@@ -417,7 +436,7 @@ AI403/
 `-- contributions/                # signed individual logs
 ```
 
-This is the **target repository organization**; model files, report files, and demo entry points will be added as their owners complete them.
+This is the **target repository organization**; some model files, report files, and demo entry points may still be under integration. The M4 implementation is in `src/models/advanced.py`, with registry selection in `src/models/registry.py` and focused tests in `tests/test_advanced.py`.
 
 Suggested `.gitignore` rules:
 
@@ -447,7 +466,7 @@ __pycache__/
 | **M1** | Dataset selection/audit/splits, data loader, preprocessing/augmentation, CNN+CTC baseline, shared trainer and evaluation infrastructure |
 | **M2** | Classic scratch/pretrained architectures and their model-specific checks |
 | **M3** | Modern CNN+Transformer architecture and padding-mask checks |
-| **M4** | Advanced architecture, no-multiscale ablation implementation and checks |
+| **M4** | Advanced CNN + BiGRU + custom attention, No-Multiscale study, No-Attention ablation implementation, checkpoint validation, padding audit, and Advanced documentation |
 | **M5 / integration owner** | Demo, final integration, comparison/report coordination (confirm assignments with the team) |
 
 Recommended collaboration process:
@@ -476,7 +495,7 @@ The live image-to-string demo is a **required deliverable but not yet marked com
 | `CUDA out of memory` | Record the hardware and failure; consider reducing per-device batch size or implementing gradient accumulation *with documented effective batch size*. Do not silently alter the experiment protocol mid-grid. |
 | CTC output length error | Confirm the CNN width reduction and `output_lengths`, especially for repeated adjacent target digits. |
 | Validation CER is high during a smoke test | Smoke/tiny-overfit are correctness gates, **not** measures of generalization. Use full validation after proper training. |
-| Missing `src.models.classic` / `modern` / `advanced` | Those planned models must be added and integrated by their owners; registering a name does not implement an architecture. |
+| Missing model implementation | Check the corresponding `src/models/` module, registry entry, config, and model-specific tests; registering a name alone does not implement an architecture. |
 | Existing partial run blocks `tune` | Inspect the existing run directory and logs. The runner refuses to reuse an incomplete run to avoid accidental mixing of results. Back it up and use a controlled recovery. |
 | A clone lacks the dataset | Raw datasets are intentionally not committed. Use the official source or the restricted team Drive link above. |
 
@@ -490,7 +509,7 @@ Official project and dataset: <https://www.orand.cl/icfhr2014-hdsr/>
 
 **Dataset license:** [Creative Commons BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/). Credit the dataset creators; use it only in accordance with the license, and **do not publish modified dataset images** in this repository. The data remains separate from the project's code and any code license the team may later choose.
 
-**Frameworks/tools:** PyTorch, TorchVision (for the planned ResNet18 models), Pillow, NumPy, Matplotlib, and psutil. Cite any third-party architecture implementations or pretrained weights actually used in the final report and here once those models have been integrated.
+**Frameworks/tools:** PyTorch, TorchVision (where used by the Classic models), Pillow, NumPy, Matplotlib, and psutil. The M4 attention operation is implemented as a custom PyTorch module rather than calling `nn.MultiheadAttention` in the model forward path. Cite any third-party architecture implementations or pretrained weights actually used in the final report.
 
 ### Team and links (fill before submission)
 
