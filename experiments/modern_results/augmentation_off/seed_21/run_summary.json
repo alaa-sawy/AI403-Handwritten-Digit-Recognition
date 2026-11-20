@@ -1,0 +1,32 @@
+{
+  "model": "modern",
+  "seed": 21,
+  "learning_rate": 0.001,
+  "dropout": 0.1,
+  "augmentation": false,
+  "best_epoch": 54,
+  "epochs_ran": 74,
+  "val_cer": 0.03936703975299112,
+  "val_exact_match": 0.8323353293413174,
+  "train_seconds": 893.338104000024,
+  "inference_ms_per_image": 0.49266806432322974,
+  "parameter_count": 1183179,
+  "model_weights_mb": 4.513469696044922,
+  "checkpoint_size_mb": 5.506749153137207,
+  "checkpoint_path": "C:\\Users\\admin\\AI403\\checkpoints\\modern_results\\augmentation_off\\seed_21\\best.pt",
+  "gpu_peak_allocated_mb": 446.63720703125,
+  "cpu_process_observed_peak_rss_mb": 1701.71484375,
+  "hardware": {
+    "device": "cuda",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.13.14",
+    "torch": "2.15.0+cu132",
+    "numpy": "2.5.5",
+    "gpu": "NVIDIA RTX A2000 Laptop GPU"
+  },
+  "split_sha256": {
+    "train_csv_sha256": "ac5aa0c9a415dae89f93923def4161cbe9f0e9e4a498f52dbebb50881b2af90e",
+    "val_csv_sha256": "8785814fb5af15a52b781975dfe59f8d249f18c22df580dc8e195790609f753a"
+  },
+  "test_was_used": false
+}
