@@ -1,0 +1,205 @@
+{
+  "split": "validation",
+  "device": "cuda",
+  "batch_sizes": [
+    1,
+    8,
+    16,
+    32,
+    64
+  ],
+  "checkpoints": [
+    {
+      "checkpoint": "D:\\AI_Projects\\AI403-Handwritten-Digit-Recognition\\checkpoints\\advanced_results\\final\\seed_21\\best.pt",
+      "model": "advanced",
+      "single_vs_padded_pair": {
+        "sample_filename": "a_car_000173.png",
+        "sample_width": 100,
+        "wider_filename": "a_car_001233.png",
+        "wider_width": 316,
+        "valid_timesteps": 100,
+        "max_abs_logit_difference": 0.5546276569366455,
+        "mean_abs_logit_difference": 0.03800635784864426,
+        "prediction_alone": "540",
+        "prediction_in_wider_batch": "540",
+        "prediction_unchanged": true
+      },
+      "batch_size_metrics": [
+        {
+          "batch_size": 1,
+          "cer": 0.026244693168660748,
+          "exact_match": 0.8882235528942116,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 8,
+          "cer": 0.02547279042840602,
+          "exact_match": 0.8902195608782435,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 16,
+          "cer": 0.02547279042840602,
+          "exact_match": 0.8902195608782435,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 32,
+          "cer": 0.02547279042840602,
+          "exact_match": 0.8902195608782435,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 64,
+          "cer": 0.02547279042840602,
+          "exact_match": 0.8902195608782435,
+          "sample_count": 501
+        }
+      ]
+    },
+    {
+      "checkpoint": "D:\\AI_Projects\\AI403-Handwritten-Digit-Recognition\\checkpoints\\advanced_results\\final\\seed_42\\best.pt",
+      "model": "advanced",
+      "single_vs_padded_pair": {
+        "sample_filename": "a_car_000173.png",
+        "sample_width": 100,
+        "wider_filename": "a_car_001233.png",
+        "wider_width": 316,
+        "valid_timesteps": 100,
+        "max_abs_logit_difference": 0.8592348098754883,
+        "mean_abs_logit_difference": 0.050129640847444534,
+        "prediction_alone": "540",
+        "prediction_in_wider_batch": "540",
+        "prediction_unchanged": true
+      },
+      "batch_size_metrics": [
+        {
+          "batch_size": 1,
+          "cer": 0.01968351987649556,
+          "exact_match": 0.9121756487025948,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 8,
+          "cer": 0.01968351987649556,
+          "exact_match": 0.9141716566866267,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 16,
+          "cer": 0.01968351987649556,
+          "exact_match": 0.9141716566866267,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 32,
+          "cer": 0.01968351987649556,
+          "exact_match": 0.9141716566866267,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 64,
+          "cer": 0.01968351987649556,
+          "exact_match": 0.9141716566866267,
+          "sample_count": 501
+        }
+      ]
+    },
+    {
+      "checkpoint": "D:\\AI_Projects\\AI403-Handwritten-Digit-Recognition\\checkpoints\\advanced_results\\ablation_no_multiscale\\seed_21\\best.pt",
+      "model": "advanced_no_multiscale",
+      "single_vs_padded_pair": {
+        "sample_filename": "a_car_000173.png",
+        "sample_width": 100,
+        "wider_filename": "a_car_001233.png",
+        "wider_width": 316,
+        "valid_timesteps": 100,
+        "max_abs_logit_difference": 0.9308915138244629,
+        "mean_abs_logit_difference": 0.04644584655761719,
+        "prediction_alone": "540",
+        "prediction_in_wider_batch": "540",
+        "prediction_unchanged": true
+      },
+      "batch_size_metrics": [
+        {
+          "batch_size": 1,
+          "cer": 0.025086839058278656,
+          "exact_match": 0.8822355289421158,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 8,
+          "cer": 0.025086839058278656,
+          "exact_match": 0.8802395209580839,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 16,
+          "cer": 0.024700887688151294,
+          "exact_match": 0.8822355289421158,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 32,
+          "cer": 0.024700887688151294,
+          "exact_match": 0.8822355289421158,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 64,
+          "cer": 0.024700887688151294,
+          "exact_match": 0.8822355289421158,
+          "sample_count": 501
+        }
+      ]
+    },
+    {
+      "checkpoint": "D:\\AI_Projects\\AI403-Handwritten-Digit-Recognition\\checkpoints\\advanced_results\\ablation_no_multiscale\\seed_42\\best.pt",
+      "model": "advanced_no_multiscale",
+      "single_vs_padded_pair": {
+        "sample_filename": "a_car_000173.png",
+        "sample_width": 100,
+        "wider_filename": "a_car_001233.png",
+        "wider_width": 316,
+        "valid_timesteps": 100,
+        "max_abs_logit_difference": 1.280866026878357,
+        "mean_abs_logit_difference": 0.06465432047843933,
+        "prediction_alone": "540",
+        "prediction_in_wider_batch": "540",
+        "prediction_unchanged": true
+      },
+      "batch_size_metrics": [
+        {
+          "batch_size": 1,
+          "cer": 0.026244693168660748,
+          "exact_match": 0.8862275449101796,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 8,
+          "cer": 0.023157082207641837,
+          "exact_match": 0.8942115768463074,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 16,
+          "cer": 0.023928984947896564,
+          "exact_match": 0.8902195608782435,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 32,
+          "cer": 0.023928984947896564,
+          "exact_match": 0.8902195608782435,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 64,
+          "cer": 0.023928984947896564,
+          "exact_match": 0.8902195608782435,
+          "sample_count": 501
+        }
+      ]
+    }
+  ]
+}

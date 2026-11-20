@@ -1,11 +1,9 @@
-"""M4 - Advanced CNN + BiGRU + Attention + CTC architecture.
+"""M4 - Advanced CNN + BiGRU + Custom Attention + CTC.
 
-Supports two variants:
-    advanced              -> Multi-scale CNN + BiGRU + Attention
-    advanced_no_multiscale -> Single-scale CNN + BiGRU + Attention
-
-Shared interface:
-    model(images, valid_widths) -> (logits, output_lengths)
+Supported variants:
+    advanced
+    advanced_no_multiscale
+    advanced_no_attention
 
 Input:
     images: [B, 1, 48, W]
@@ -16,7 +14,10 @@ Output:
     output_lengths: [B]
 """
 
+import math
+
 import torch
+import torch.nn.functional as F
 from torch import nn
 from torch.nn.utils.rnn import (
     pack_padded_sequence,
@@ -31,8 +32,13 @@ BLANK_ID = 0
 class ConvBlock(nn.Module):
     """Convolution + BatchNorm + ReLU."""
 
-    def __init__(self, in_channels, out_channels, kernel_size=3,
-                 dilation=1):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size=3,
+        dilation=1,
+    ):
         super().__init__()
 
         padding = dilation * (kernel_size // 2)
@@ -55,7 +61,7 @@ class ConvBlock(nn.Module):
 
 
 class MultiScaleBlock(nn.Module):
-    """Parallel convolution branches with different receptive fields."""
+    """Custom parallel multi-scale convolution block."""
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
@@ -97,33 +103,171 @@ class MultiScaleBlock(nn.Module):
         return self.project(combined)
 
 
+class CustomMultiHeadAttention(nn.Module):
+    """Custom Multi-Head Self-Attention.
+
+    Parameter names and shapes are compatible with
+    torch.nn.MultiheadAttention for checkpoint loading.
+    """
+
+    def __init__(
+        self,
+        embed_dim=256,
+        num_heads=4,
+        dropout=0.3,
+    ):
+        super().__init__()
+
+        if embed_dim % num_heads != 0:
+            raise ValueError(
+                "embed_dim must be divisible by num_heads"
+            )
+
+        self.embed_dim = embed_dim
+        self.num_heads = num_heads
+        self.head_dim = embed_dim // num_heads
+        self.dropout = dropout
+
+        # Keep the same parameter names and shapes
+        # as nn.MultiheadAttention.
+        self.in_proj_weight = nn.Parameter(
+            torch.empty(3 * embed_dim, embed_dim)
+        )
+
+        self.in_proj_bias = nn.Parameter(
+            torch.empty(3 * embed_dim)
+        )
+
+        self.out_proj = nn.Linear(
+            embed_dim,
+            embed_dim,
+        )
+
+        self._reset_parameters()
+
+    def _reset_parameters(self):
+        nn.init.xavier_uniform_(self.in_proj_weight)
+        nn.init.constant_(self.in_proj_bias, 0.0)
+
+    def forward(
+        self,
+        query,
+        key,
+        value,
+        key_padding_mask=None,
+        need_weights=False,
+    ):
+        batch_size, sequence_length, _ = query.shape
+
+        qkv = F.linear(
+            query,
+            self.in_proj_weight,
+            self.in_proj_bias,
+        )
+
+        q, k, v = qkv.chunk(3, dim=-1)
+
+        q = q.reshape(
+            batch_size,
+            sequence_length,
+            self.num_heads,
+            self.head_dim,
+        ).transpose(1, 2)
+
+        k = k.reshape(
+            batch_size,
+            sequence_length,
+            self.num_heads,
+            self.head_dim,
+        ).transpose(1, 2)
+
+        v = v.reshape(
+            batch_size,
+            sequence_length,
+            self.num_heads,
+            self.head_dim,
+        ).transpose(1, 2)
+
+        scores = torch.matmul(
+            q,
+            k.transpose(-2, -1),
+        ) / math.sqrt(self.head_dim)
+
+        if key_padding_mask is not None:
+            mask = key_padding_mask[:, None, None, :]
+            scores = scores.masked_fill(
+                mask,
+                float("-inf"),
+            )
+
+        attention_weights = torch.softmax(
+            scores,
+            dim=-1,
+        )
+
+        attention_weights = F.dropout(
+            attention_weights,
+            p=self.dropout,
+            training=self.training,
+        )
+
+        attended = torch.matmul(
+            attention_weights,
+            v,
+        )
+
+        attended = (
+            attended.transpose(1, 2)
+            .contiguous()
+            .reshape(
+                batch_size,
+                sequence_length,
+                self.embed_dim,
+            )
+        )
+
+        attended = self.out_proj(attended)
+
+        if need_weights:
+            return attended, attention_weights.mean(dim=1)
+
+        return attended, None
+
+
 class AdvancedCTC(nn.Module):
     """Advanced handwritten digit-string recognition model."""
 
-    def __init__(self, dropout: float = 0.3,
-                 multiscale: bool = True):
+    def __init__(
+        self,
+        dropout: float = 0.3,
+        multiscale: bool = True,
+        attention: bool = True,
+    ):
         super().__init__()
 
         if not 0 <= dropout < 1:
-            raise ValueError("dropout must be between 0 and 1")
+            raise ValueError(
+                "dropout must be between 0 and 1"
+            )
 
         self.multiscale = multiscale
+        self.use_attention = attention
 
-        # Stage 1: extract low-level visual features.
+        # Stage 1
         self.stage1 = nn.Sequential(
             ConvBlock(1, 32, kernel_size=3),
             ConvBlock(32, 32, kernel_size=3),
             nn.MaxPool2d(kernel_size=(2, 1)),
         )
 
-        # Stage 2: extract deeper visual features.
+        # Stage 2
         self.stage2 = nn.Sequential(
             ConvBlock(32, 64, kernel_size=3),
             ConvBlock(64, 64, kernel_size=3),
             nn.MaxPool2d(kernel_size=(2, 1)),
         )
 
-        # Stage 3: multi-scale or single-scale feature extraction.
+        # Stage 3
         if multiscale:
             self.stage3 = MultiScaleBlock(
                 in_channels=64,
@@ -142,8 +286,7 @@ class AdvancedCTC(nn.Module):
 
         self.feature_dropout = nn.Dropout2d(dropout)
 
-        # CNN output: [B, 128, 6, W]
-        # Convert to sequence: [B, W, 128]
+        # BiGRU
         self.bigru = nn.GRU(
             input_size=128,
             hidden_size=128,
@@ -153,16 +296,20 @@ class AdvancedCTC(nn.Module):
             dropout=dropout,
         )
 
-        # BiGRU output dimension = 128 * 2 = 256.
-        self.attention = nn.MultiheadAttention(
-            embed_dim=256,
-            num_heads=4,
-            dropout=dropout,
-            batch_first=True,
-        )
+        # Optional Custom Attention
+        if self.use_attention:
+            self.attention = CustomMultiHeadAttention(
+                embed_dim=256,
+                num_heads=4,
+                dropout=dropout,
+            )
 
-        self.attention_norm = nn.LayerNorm(256)
+            self.attention_norm = nn.LayerNorm(256)
+        else:
+            self.attention = None
+            self.attention_norm = None
 
+        # Feed Forward
         self.feed_forward = nn.Sequential(
             nn.Linear(256, 512),
             nn.ReLU(inplace=True),
@@ -173,6 +320,7 @@ class AdvancedCTC(nn.Module):
 
         self.output_norm = nn.LayerNorm(256)
 
+        # CTC Classifier
         self.classifier = nn.Linear(
             256,
             NUM_CLASSES,
@@ -191,7 +339,9 @@ class AdvancedCTC(nn.Module):
         batch_size, channels, height, padded_width = images.shape
 
         if channels != 1:
-            raise ValueError("Input images must have one channel")
+            raise ValueError(
+                "Input images must have one channel"
+            )
 
         if height != 48:
             raise ValueError(
@@ -212,7 +362,7 @@ class AdvancedCTC(nn.Module):
         if torch.any(widths <= 0) or torch.any(widths > padded_width):
             raise ValueError("Invalid input widths")
 
-        # CNN feature extraction.
+        # CNN feature extraction
         features = self.stage1(images)
         features = self.stage2(features)
         features = self.stage3(features)
@@ -220,16 +370,13 @@ class AdvancedCTC(nn.Module):
 
         features = self.feature_dropout(features)
 
-        # Average over height, preserving the horizontal time axis.
+        # Convert CNN features into sequences
         features = features.mean(dim=2)
-
-        # [B, 128, W] -> [B, W, 128]
         features = features.permute(0, 2, 1).contiguous()
 
-        # Width is preserved by all CNN operations.
         output_lengths = widths
 
-        # Pack sequences so padded positions do not affect BiGRU.
+        # BiGRU with packed sequences
         packed_features = pack_padded_sequence(
             features,
             output_lengths,
@@ -245,30 +392,32 @@ class AdvancedCTC(nn.Module):
             total_length=padded_width,
         )
 
-        # Create attention padding mask.
+        # Attention padding mask
         positions = torch.arange(
             padded_width,
             device=sequence.device,
         )
 
-        padding_mask = positions.unsqueeze(0) >= output_lengths.to(
-            sequence.device
-        ).unsqueeze(1)
-
-        # Self-attention.
-        attended, _ = self.attention(
-            sequence,
-            sequence,
-            sequence,
-            key_padding_mask=padding_mask,
-            need_weights=False,
+        padding_mask = (
+            positions.unsqueeze(0)
+            >= output_lengths.to(sequence.device).unsqueeze(1)
         )
 
-        sequence = self.attention_norm(
-            sequence + attended
-        )
+        # Optional Attention
+        if self.use_attention:
+            attended, _ = self.attention(
+                sequence,
+                sequence,
+                sequence,
+                key_padding_mask=padding_mask,
+                need_weights=False,
+            )
 
-        # Feed-forward residual block.
+            sequence = self.attention_norm(
+                sequence + attended
+            )
+
+        # Feed Forward residual block
         feed_forward_output = self.feed_forward(sequence)
 
         sequence = self.output_norm(
@@ -277,7 +426,7 @@ class AdvancedCTC(nn.Module):
 
         sequence = self.dropout(sequence)
 
-        # CTC classification.
+        # CTC classification
         logits = self.classifier(sequence)
 
         return logits, output_lengths
