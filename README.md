@@ -8,7 +8,7 @@
 **Repository:** https://github.com/alaa-sawy/AI403-Handwritten-Digit-Recognition  
 **Checkpoint / dataset transfer Drive:** https://drive.google.com/drive/folders/1y6Tq6SnGyZ_oa1Vexl4Ovsx27PQArUZL?usp=sharing
 
-> **Verified repository status (20 November 2026):** Five primary models have complete six-trial tuning and three-seed **validation** evidence. A new aggregate-only 21-evaluation **Official TEST** audit now covers the five primary architectures and two controlled-study variants: 15 fresh two-lab SAFE exports plus six previously audited archived M4 runs. The five-model TEST ranking differs from the validation ranking. M5's Streamlit frontend is committed, but `src/inference.py` and `streamlit` in `requirements.txt` are still missing in the inspected repository; successful clean-clone inference is not yet verified. Signed contributions and final TA hand-in remain to be finalized.
+> **Verified repository status (20 November 2026):** Five primary models have complete six-trial tuning and three-seed validation evidence. Aggregate-only Official TEST auditing covers 21 seed evaluations (15 from Labs A/B plus six archived M4). M5's Streamlit inference adapter and 9 automated integration tests are now provided in the repository; local CPU smoke checks with genuine frozen Baseline and Classic Pretrained checkpoints succeeded. Real browser-based Streamlit use with the intended demo images and team checkpoints still needs verification on the presentation computer. The large final model checkpoints remain in the team Drive, not in the repository. Final team hand-in and signed contribution records remain separate.
 
 ## README map - course requirements
 
@@ -243,7 +243,7 @@ The Baseline frequently collapses to `10` and has substantial deletion errors. V
 
 ## 7. Live demo command and present limitations
 
-M5 committed a **Streamlit frontend** at [`demo/app.py`](demo/app.py), shared tools under [`shared/`](shared/) and validation comparison figures under [`m5/results/`](m5/results/).
+M5 committed a **Streamlit frontend** at [`demo/app.py`](demo/app.py), checkpoint-only inference adapter at [`src/inference.py`](src/inference.py), focused integration tests at [`tests/test_m5_integration.py`](tests/test_m5_integration.py), shared tools under [`shared/`](shared/) and validation comparison figures under [`m5/results/`](m5/results/).
 
 **When the missing adapter and dependency are resolved**, run locally (the demo is intended to infer from downloaded, trained checkpoints, not an external AI API):
 
@@ -254,11 +254,11 @@ M5 committed a **Streamlit frontend** at [`demo/app.py`](demo/app.py), shared to
 
 **IMPORTANT: not yet verified working from a clean clone.** As of the inspected `main` revision:
 
-- `demo/app.py` imports `src.inference` (`MODEL_CHECKPOINTS`, `checkpoint_for`, `load_checkpoint_model`, `predict_image`), but `src/inference.py` **does not exist** on `main`.
-- `streamlit` is **not included** in `requirements.txt`, so the standard environment setup alone cannot launch the UI.
-- M5's guide mentioned `tests/test_m5_integration.py`, but that test was **not found** on `main`. Required live inference with a real uploaded image and an actual final checkpoint is therefore **not independently verified**.
+- `src/inference.py` now implements the four required methods with safe checkpoint loading and the shared project preprocessing/CTC decoder.
+- `streamlit` is declared in `requirements.txt`.
+- `tests/test_m5_integration.py` adds nine no-training local tests; these passed in a CPU sandbox. Checkpoint restoration and single-image inference also succeeded using genuine frozen Baseline and Classic Pretrained weights in the sandbox. The browser-level demo on a team laptop is not yet independently verified.
 
-M5 must add the adapter, register the Streamlit dependency, restore usable checkpoints, run model integration tests and demonstrate one real local inference before the 5-minute course demo can be claimed complete. Do **not** treat the mere presence of the frontend as a working live demonstration. The default Baseline should not be presented as a reliable digit recognizer.
+Before presenting, M5 must copy the appropriate large frozen checkpoints from the team's Drive into the documented local `checkpoints/` paths and confirm a real uploaded image produces a prediction in Streamlit. Do **not** treat merely opening the frontend as a working live demonstration. The default selection is Classic Pretrained; Baseline remains accessible for scientific comparison only.
 
 ## 8. Hardware and expected historical runtimes
 
@@ -286,7 +286,7 @@ The system trains and predicts using the team's locally saved PyTorch models. It
 - **CNN + sequence recognition:** Shi, Bai and Yao (2017), *An End-to-End Trainable Neural Network for Image-Based Sequence Recognition and Its Application to Scene Text Recognition*, IEEE TPAMI ([preprint](https://arxiv.org/abs/1507.05717)).
 - **ResNet18 / pretrained ImageNet:** He et al. (2016), *Deep Residual Learning for Image Recognition*, CVPR ([paper](https://arxiv.org/abs/1512.03385)); [TorchVision ResNet18](https://pytorch.org/vision/stable/models/generated/torchvision.models.resnet18.html).
 - **Transformer:** Vaswani et al. (2017), *Attention Is All You Need* ([paper](https://arxiv.org/abs/1706.03762)).
-- **Software:** PyTorch, TorchVision, NumPy, Pillow, Matplotlib, psutil; Streamlit is the planned M5 demo UI dependency. Custom preprocessing, architectures, attention, masking, CTC integration and experiment controls are in the repository; library components are adapted and cited.
+- **Software:** PyTorch, TorchVision, NumPy, Pillow, Matplotlib, psutil and Streamlit. Custom preprocessing, architectures, attention, masking, CTC integration and experiment controls are in the repository; library components are adapted and cited.
 
 ## Submission checklist and known blockers
 
@@ -300,7 +300,7 @@ The course brief requires **12 deliverables**: documented source code, dataset d
 | Modern augmentation and M4 no-multiscale ablation | Recorded |
 | M4 archived Official TEST metrics | Audited aggregates preserved in [M4 evidence](docs/M4_Official_Test_Evidence.md) |
 | M1-M3 Official TEST aggregates | **15/15 evaluations completed**; combined with six archived M4 results in [21-evaluation audit](docs/Official_Test_All_Models_20261120.md) |
-| M5 demo | Frontend present, **blocked** pending `src/inference.py` and Streamlit dependency |
+| M5 demo | Inference adapter, dependency and nine local integration tests added; on-device browser check with final checkpoint still required |
 | Final report PDF and slides in `report/` | Not tracked in current repository |
 | Large final checkpoint archive | Drive link provided; **contents not independently inventoried here** |
 | Contribution logs / peer reviews | M1 PDF copies and M2-M5 review templates present; signed, personally confirmed final PDFs pending |

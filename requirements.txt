@@ -8,6 +8,7 @@ numpy
 Pillow
 psutil
 matplotlib
+streamlit
 
 # Windows / Linux: CUDA-enabled PyTorch
 torch==2.15.0+cu132 ; sys_platform == "win32" or sys_platform == "linux"

@@ -1,54 +1,71 @@
-from pathlib import Path
+"""NeuroMotion: frozen local-checkpoint handwriting recognition demo."""
+
 import streamlit as st
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import torch
 
 from src.inference import MODEL_CHECKPOINTS, checkpoint_for, load_checkpoint_model, predict_image
 
-st.set_page_config(page_title="AI403 Handwritten Digit Recognition", page_icon="🔢", layout="centered")
-st.title("🔢 AI403 — Handwritten Digit-String Recognition")
-st.caption("M5 Live Demo | ORAND-CAR-2014 | CNN / sequence models + CTC")
-st.info("Upload a cropped cheque courtesy-amount image. The output is a digit string; leading zeros are preserved as text.")
+st.set_page_config(page_title="NeuroMotion | Handwritten Digits", page_icon="🔢", layout="centered")
+st.title("🔢 NeuroMotion — Handwritten Digit-String Recognition")
+st.caption("AI403 Final Project | ORAND-CAR-2014 | Local checkpoints + CTC")
+st.info("Upload a cropped handwritten digit-string image. Predictions are text: leading zeros are preserved.")
 
 model_label = st.selectbox("Choose model architecture", list(MODEL_CHECKPOINTS))
-uploaded = st.file_uploader("Upload handwritten amount image", type=["png", "jpg", "jpeg", "bmp", "tif", "tiff"])
-
-model_name, _ = MODEL_CHECKPOINTS[model_label]
 seed = st.selectbox("Checkpoint seed", [7, 21, 42], index=0)
+model_name, _ = MODEL_CHECKPOINTS[model_label]
 checkpoint_path = checkpoint_for(model_label, seed)
+checkpoint_available = checkpoint_path.is_file()
 
 if model_label == "Baseline CNN":
-    st.warning("Baseline is included as a pipeline demonstration. Its recorded validation CER is about 78.36% and exact-match accuracy is 0%; do not treat its output as reliable.")
+    st.warning(
+        "Baseline is for scientific comparison, not reliable recognition: "
+        "validation CER ≈ 78.36% and exact-match accuracy 0%."
+    )
+if checkpoint_available:
+    st.caption(f"Local checkpoint ready: {checkpoint_path}")
 else:
-    st.success("A trained checkpoint for this architecture is bundled with this project.")
+    st.warning(
+        "Checkpoint missing locally for this selection. Copy the correct final best.pt "
+        "from the team's Drive into: " + str(checkpoint_path)
+    )
 
+uploaded = st.file_uploader("Upload handwritten digit-string image", type=["png", "jpg", "jpeg", "bmp", "tif", "tiff"])
 if uploaded is not None:
-    image = Image.open(uploaded).copy()
-    st.image(image, caption="Uploaded input", use_container_width=True)
-    if st.button("Recognize digit string", type="primary"):
-        try:
-            device = "cuda" if torch.cuda.is_available() else "cpu"
-            with st.spinner(f"Loading {model_label} checkpoint and running inference..."):
-                model, checkpoint, device = load_checkpoint_model(model_name, checkpoint_path, device)
-                prediction, processed, width = predict_image(image, model, device)
-            st.subheader("Recognition result")
-            if prediction:
-                st.metric("Predicted digit string", prediction)
-            else:
-                st.warning("The model returned an empty digit string. Try a clearer, tightly cropped image.")
-            st.caption(f"Checkpoint seed: {checkpoint['config'].get('seed', 'unknown')} · Device: {device} · Resized width: {width}px")
-            if model_name == "baseline":
-                st.warning("This is a functional end-to-end prediction, but the Baseline's validation performance is very weak.")
-        except Exception as exc:
-            st.error(f"Inference failed: {exc}")
+    try:
+        image = Image.open(uploaded)
+        image.load()
+    except (UnidentifiedImageError, OSError, ValueError) as exc:
+        st.error(f"Cannot read uploaded image: {exc}")
+    else:
+        st.image(image, caption="Uploaded input", use_container_width=True)
+        if st.button("Recognize digit string", type="primary", disabled=not checkpoint_available):
+            try:
+                device = "cuda" if torch.cuda.is_available() else "cpu"
+                with st.spinner(f"Loading {model_label} checkpoint and running inference..."):
+                    model, checkpoint, actual_device = load_checkpoint_model(
+                        model_name, checkpoint_path, device, model_label=model_label
+                    )
+                    prediction, _, width = predict_image(image, model, actual_device)
+                st.subheader("Recognition result")
+                if prediction:
+                    st.metric("Predicted digit string", prediction)
+                else:
+                    st.warning("CTC returned an empty digit string. Try a clearer cropped image.")
+                st.caption(
+                    f"Model: {model_label} | Seed: {checkpoint['config']['seed']} | "
+                    f"Device: {actual_device} | Resized width: {width}px"
+                )
+            except Exception as exc:
+                st.error(f"Inference failed: {exc}")
 else:
-    st.caption("Choose a model and upload one cropped image to enable recognition.")
+    st.caption("Choose a model, verify its checkpoint is available, then upload an image.")
 
 with st.expander("Model and evaluation notes"):
     st.markdown("""
-    - The application loads the selected model's trained checkpoint; it does not train models during demo use.
-    - Images are converted to grayscale, resized to height 48 while preserving aspect ratio, and normalized to [0, 1].
-    - The CTC decoder collapses repeated adjacent frame predictions and removes blank tokens.
-    - Leading zeros are preserved because the output is a string, not an integer.
-    - Validation metrics are reported separately from the M4-supplied official-test evidence.
+    - This application **does not train** models or download pretrained weights.
+    - Preprocessing: grayscale, fixed height 48 (aspect ratio preserved), normalize to [0, 1].
+    - CTC collapses repeated frame predictions and removes blank tokens; repeated digits may remain when separated by blanks.
+    - The demo is not an official TEST benchmark. See the project README for frozen TEST metrics.
+    - Large final checkpoints are shared separately via the team's Drive, not automatically bundled with GitHub.
     """)
