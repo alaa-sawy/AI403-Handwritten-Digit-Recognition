@@ -1,0 +1,15 @@
+{
+  "model": "classic_scratch",
+  "optimizer": "adam",
+  "learning_rate": 0.0001,
+  "dropout": 0.1,
+  "batch_size": 32,
+  "epochs": 120,
+  "patience": 20,
+  "weight_decay": 0.0001,
+  "gradient_clip": 5.0,
+  "augmentation": true,
+  "seed": 403,
+  "num_workers": 0,
+  "device": "auto"
+}
