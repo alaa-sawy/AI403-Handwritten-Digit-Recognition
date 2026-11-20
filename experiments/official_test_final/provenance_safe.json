@@ -1,0 +1,29 @@
+{
+  "lab_A_ZIP_SHA256": "2117632623c3d38828a7ecefcc10c6144b4c3bcf6f1ffb2f41471d144d219c9f",
+  "lab_B_ZIP_SHA256": "c009d0282404c47db82f3900c88f8e45be23f8dab84b66ce73dd38534d9e4208",
+  "lab_A_git_commit": "46b7964fbb7170a3b1b1477eb2f81de6baedcccc",
+  "lab_B_git_commit": "dc0c186025013387c89294cd7fa580fe495d8fb3",
+  "lab_A_environment": {
+    "python": "3.14.7",
+    "torch": "2.15.0+cu132",
+    "gpu": "NVIDIA RTX A1000 Laptop GPU"
+  },
+  "lab_B_environment": {
+    "python": "3.13.14",
+    "torch": "2.15.0+cu132",
+    "gpu": "NVIDIA RTX A2000 Laptop GPU"
+  },
+  "two_lab_test_manifest_sha256": "f3a8e41d5c7496aaa61a50e09c99e72705de87d5ca00f419d59a2ef181f607c4",
+  "lab_A_B_common_evaluator_sha256": "5b2fc297109258c774fb2065f9d6ab17c4307d74e51cc626bb0dae0da0055c09",
+  "lab_A_B_common_ctc_sha256": "bdfb54947de6022480ca18d28846d380fe5f89ca7e15cb57b9c009237ab51d80",
+  "lab_A_B_common_preprocess_sha256": "59fa04201e91e3c9524782d39fa15cb08dbd448e0c451d958bfb12f6aafdca28",
+  "lab_A_B_classic_local_sha256": {
+    "A": "4c917071606d2dbb772ffbd53f40feb73c12e3233df41808b6061e4a053c6d35",
+    "B": "a7185fc5572dbb8e2ba5840035dac9ae0a5482d5515c3815acefdfe40c93facd"
+  },
+  "lab_A_B_batch_size": 32,
+  "official_test_samples_per_evaluation": 6710,
+  "official_test_reference_characters": 33506,
+  "m4_provenance": "Previously independently audited saved M4 per-image result archives; original invocation/commit could not be independently reconstructed; M4 lab manifest SHA is not recorded.",
+  "privacy": "Only aggregate metrics and SHA-256 digests; no per-image TEST labels, predictions or images"
+}

@@ -7,7 +7,7 @@
 **Repository:** https://github.com/alaa-sawy/AI403-Handwritten-Digit-Recognition  
 **Checkpoint / dataset transfer Drive:** https://drive.google.com/drive/folders/1y6Tq6SnGyZ_oa1Vexl4Ovsx27PQArUZL?usp=sharing
 
-> **Verified repository status (20 November 2026):** Five primary models have six-trial tuning and three-seed **validation** evidence. Modern Augmentation ON/OFF and Advanced No-Multiscale studies are also recorded. M4 has separately audited archived **Official TEST** results. M1-M3 Official TEST comparison is **not yet committed as a complete table**. M5 has committed Streamlit demo source, but the currently missing `src/inference.py` and missing `streamlit` dependency block a verified clean-clone demo launch. Final team PDF/slides and signed contribution records are not yet present on `main`. See the [submission checklist](#submission-checklist-and-known-blockers).
+> **Verified repository status (20 November 2026):** Five primary models have complete six-trial tuning and three-seed **validation** evidence. A new aggregate-only 21-evaluation **Official TEST** audit now covers the five primary architectures and two controlled-study variants: 15 fresh two-lab SAFE exports plus six previously audited archived M4 runs. The five-model TEST ranking differs from the validation ranking. M5's Streamlit frontend is committed, but `src/inference.py` and `streamlit` in `requirements.txt` are still missing in the inspected repository; successful clean-clone inference is not yet verified. Signed contributions and final TA hand-in remain to be finalized.
 
 ## README map - course requirements
 
@@ -71,14 +71,19 @@ The data are the publicly documented **ORAND-CAR-2014 CAR-A and CAR-B** digit-st
 
 **Best recorded mean validation CER:** Advanced Full, **2.316%**. This is a validation/model-selection finding, **not** the final five-model TEST ranking. Baseline is included as the required reference model; its very high error rate and 0% whole-string exact match make it unsuitable as the deployed recognizer.
 
-**Separately audited M4 Official TEST** (6,710 samples per seed; these are **TEST**, not validation):
+**Completed aggregate Official TEST: 21 evaluations**, seven conditions x three seeds. The original 6,710-image official benchmark was used exclusively after freezing the saved final checkpoints.
 
-| M4 condition | TEST CER (%) | TEST exact-string match (%) |
+| Model / condition | TEST CER (%) mean +/- sample SD | Exact match (%) mean +/- sample SD |
 | --- | ---: | ---: |
-| Advanced Full | **2.4981 +/- 0.3520** | **89.5181 +/- 1.3729** |
-| Advanced No-Multiscale | 2.6055 +/- 0.2495 | 89.1207 +/- 0.9222 |
+| `baseline` | 78.8814 +/- 0.0966 | 0.0000 +/- 0.0000 |
+| `classic_scratch` | 2.9328 +/- 0.1792 | 87.7149 +/- 0.6521 |
+| `classic_pretrained` | 2.3369 +/- 0.2633 | 90.0546 +/- 1.0456 |
+| `modern` | 4.0271 +/- 0.2613 | 83.3631 +/- 0.9531 |
+| `modern_off` | 4.0450 +/- 0.2597 | 83.4327 +/- 1.0433 |
+| `advanced` | 2.4981 +/- 0.3520 | 89.5181 +/- 1.3729 |
+| `advanced_no_multiscale` | 2.6055 +/- 0.2495 | 89.1207 +/- 0.9222 |
 
-Source: [M4 Official TEST audit and checkpoint hashes](docs/M4_Official_Test_Evidence.md). The archived M4 files passed independent saved-output consistency checks; the original evaluation invocation / Git revision is not independently reconstructed. **Do not tune or select checkpoints on TEST.** The difference does not prove a reliable causal MultiScale advantage.
+**Best observed Official TEST:** Classic Pretrained, **2.3369%** CER and **90.0546%** whole-string exact match. Advanced Full was still the *validation* leader; do not revise checkpoint choice based on TEST. Full [21-evaluation audit and provenance](docs/Official_Test_All_Models_20261120.md) and separate [archived M4 audit](docs/M4_Official_Test_Evidence.md) document the evidence limits.
 
 ## 3. Environment setup
 
@@ -209,7 +214,7 @@ Saved experiment outputs: `experiments/<model>_results/tuning_results.csv`, `bes
 & $py -m src.evaluate --checkpoint .\checkpoints\advanced_results\final\seed_7\best.pt --split test --final-test
 ~~~
 
-**Do not re-run the preparation script if `data/splits/test.csv` already exists**; it explicitly rejects overwriting. M1-M3 Official TEST was being collected on two dedicated lab machines after checkpoint-selection freeze. No complete audited M1-M3 TEST table was present in the reviewed GitHub snapshot; don't substitute their validation results as TEST results. Archived six-seed M4 TEST results are linked above. Any public summary should contain aggregate metrics, not raw TEST labels, images, `predictions.csv` or `errors.csv`.
+**Do not re-run the preparation script if `data/splits/test.csv` already exists**; it explicitly rejects overwriting. The authorized two-lab pass completed 15/15 M1-M3 family and Modern augmentation study seed evaluations. Together with six archived M4 seed evaluations, the [complete 21-evaluation Official TEST audit](docs/Official_Test_All_Models_20261120.md) now records aggregate metrics, checkpoint hashes and method/provenance differences. Never substitute validation scores for TEST or select/tune again based on TEST. Any public summary should contain aggregate metrics, not raw TEST labels, images, `predictions.csv` or `errors.csv`.
 
 **Task-appropriate metrics:** corpus CER = (substitutions + deletions + insertions) / reference characters; exact complete-string match; per-digit precision, recall, F1 and support; error type counts and CAR-subset/length breakdowns. Each reported final condition has 3 independently trained seeds and sample SD. Sample SD across seeds is **not** a confidence interval.
 
@@ -292,8 +297,8 @@ The course brief requires **12 deliverables**: documented source code, dataset d
 | --- | --- |
 | Five models; 6 trials each; 3 final validation seeds each | Recorded |
 | Modern augmentation and M4 no-multiscale ablation | Recorded |
-| M4 archived Official TEST metrics | Audited aggregates in [M4 evidence](docs/M4_Official_Test_Evidence.md) |
-| M1-M3 Official TEST aggregates | Not yet present as a complete audited table; two-lab evaluation in progress |
+| M4 archived Official TEST metrics | Audited aggregates preserved in [M4 evidence](docs/M4_Official_Test_Evidence.md) |
+| M1-M3 Official TEST aggregates | **15/15 evaluations completed**; combined with six archived M4 results in [21-evaluation audit](docs/Official_Test_All_Models_20261120.md) |
 | M5 demo | Frontend present, **blocked** pending `src/inference.py` and Streamlit dependency |
 | Final report PDF and slides in `report/` | Not tracked in current repository |
 | Large final checkpoint archive | Drive link provided; **contents not independently inventoried here** |
