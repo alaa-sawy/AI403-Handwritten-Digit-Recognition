@@ -33,10 +33,7 @@ __pycache__/
 /data/audit_outputs/code_backups/
 /data/audit_outputs/*.npy
 # Local experiment gate outputs (smoke / tiny-overfit) - keep test code, not artifacts
-/experiments/*/gates/
-# Preserve M4 Advanced gate evidence only
-!/experiments/advanced_results/gates/
-!/experiments/advanced_no_multiscale_results/gates/
+/experiments/**/gates/
 
 # Local caches
 .cache/
