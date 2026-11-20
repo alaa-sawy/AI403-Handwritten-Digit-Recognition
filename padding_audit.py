@@ -15,9 +15,9 @@ from src.models.registry import build_model
 
 def load_model(checkpoint_path, device):
     checkpoint = torch.load(
-        checkpoint_path,
-        map_location="cpu",
-        weights_only=False,
+    checkpoint_path,
+    map_location="cpu",
+    weights_only=True,
     )
     config = checkpoint["config"]
     model = build_model(config["model"], config["dropout"])
@@ -157,7 +157,7 @@ def main():
         ]
 
         item = {
-            "checkpoint": str(checkpoint_path),
+            "checkpoint": checkpoint_path.relative_to(Path.cwd()).as_posix(),
             "model": checkpoint["config"]["model"],
             "single_vs_padded_pair": pair_result,
             "batch_size_metrics": batch_results,

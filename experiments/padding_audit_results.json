@@ -10,7 +10,55 @@
   ],
   "checkpoints": [
     {
-      "checkpoint": "D:\\AI_Projects\\AI403-Handwritten-Digit-Recognition\\checkpoints\\advanced_results\\final\\seed_21\\best.pt",
+      "checkpoint": "checkpoints/advanced_results/final/seed_7/best.pt",
+      "model": "advanced",
+      "single_vs_padded_pair": {
+        "sample_filename": "a_car_000173.png",
+        "sample_width": 100,
+        "wider_filename": "a_car_001233.png",
+        "wider_width": 316,
+        "valid_timesteps": 100,
+        "max_abs_logit_difference": 0.4773416519165039,
+        "mean_abs_logit_difference": 0.028187237679958344,
+        "prediction_alone": "540",
+        "prediction_in_wider_batch": "540",
+        "prediction_unchanged": true
+      },
+      "batch_size_metrics": [
+        {
+          "batch_size": 1,
+          "cer": 0.026244693168660748,
+          "exact_match": 0.8762475049900199,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 8,
+          "cer": 0.024700887688151294,
+          "exact_match": 0.8822355289421158,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 16,
+          "cer": 0.02431493631802393,
+          "exact_match": 0.8842315369261478,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 32,
+          "cer": 0.02431493631802393,
+          "exact_match": 0.8842315369261478,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 64,
+          "cer": 0.02431493631802393,
+          "exact_match": 0.8842315369261478,
+          "sample_count": 501
+        }
+      ]
+    },
+    {
+      "checkpoint": "checkpoints/advanced_results/final/seed_21/best.pt",
       "model": "advanced",
       "single_vs_padded_pair": {
         "sample_filename": "a_car_000173.png",
@@ -58,7 +106,7 @@
       ]
     },
     {
-      "checkpoint": "D:\\AI_Projects\\AI403-Handwritten-Digit-Recognition\\checkpoints\\advanced_results\\final\\seed_42\\best.pt",
+      "checkpoint": "checkpoints/advanced_results/final/seed_42/best.pt",
       "model": "advanced",
       "single_vs_padded_pair": {
         "sample_filename": "a_car_000173.png",
@@ -106,7 +154,55 @@
       ]
     },
     {
-      "checkpoint": "D:\\AI_Projects\\AI403-Handwritten-Digit-Recognition\\checkpoints\\advanced_results\\ablation_no_multiscale\\seed_21\\best.pt",
+      "checkpoint": "checkpoints/advanced_results/ablation_no_multiscale/seed_7/best.pt",
+      "model": "advanced_no_multiscale",
+      "single_vs_padded_pair": {
+        "sample_filename": "a_car_000173.png",
+        "sample_width": 100,
+        "wider_filename": "a_car_001233.png",
+        "wider_width": 316,
+        "valid_timesteps": 100,
+        "max_abs_logit_difference": 0.5395667552947998,
+        "mean_abs_logit_difference": 0.029129590839147568,
+        "prediction_alone": "540",
+        "prediction_in_wider_batch": "540",
+        "prediction_unchanged": true
+      },
+      "batch_size_metrics": [
+        {
+          "batch_size": 1,
+          "cer": 0.02238517946738711,
+          "exact_match": 0.8962075848303394,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 8,
+          "cer": 0.020841373986877652,
+          "exact_match": 0.9021956087824351,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 16,
+          "cer": 0.020841373986877652,
+          "exact_match": 0.9021956087824351,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 32,
+          "cer": 0.020841373986877652,
+          "exact_match": 0.9021956087824351,
+          "sample_count": 501
+        },
+        {
+          "batch_size": 64,
+          "cer": 0.021227325357005018,
+          "exact_match": 0.9001996007984032,
+          "sample_count": 501
+        }
+      ]
+    },
+    {
+      "checkpoint": "checkpoints/advanced_results/ablation_no_multiscale/seed_21/best.pt",
       "model": "advanced_no_multiscale",
       "single_vs_padded_pair": {
         "sample_filename": "a_car_000173.png",
@@ -154,7 +250,7 @@
       ]
     },
     {
-      "checkpoint": "D:\\AI_Projects\\AI403-Handwritten-Digit-Recognition\\checkpoints\\advanced_results\\ablation_no_multiscale\\seed_42\\best.pt",
+      "checkpoint": "checkpoints/advanced_results/ablation_no_multiscale/seed_42/best.pt",
       "model": "advanced_no_multiscale",
       "single_vs_padded_pair": {
         "sample_filename": "a_car_000173.png",
