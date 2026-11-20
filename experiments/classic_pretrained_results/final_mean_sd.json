@@ -1,0 +1,16 @@
+{
+  "group": "classic_pretrained",
+  "seeds": [
+    7,
+    21,
+    42
+  ],
+  "val_cer_mean": 0.026759294995497233,
+  "val_cer_sd": 0.0016068436892830047,
+  "val_exact_match_mean": 0.8809048569527611,
+  "val_exact_match_sd": 0.007556764265868661,
+  "train_seconds_mean": 6056.437089700019,
+  "train_seconds_sd": 2068.2798584626194,
+  "inference_ms_per_image_mean": 3.039786427301006,
+  "inference_ms_per_image_sd": 0.12734449310562698
+}
